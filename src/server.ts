@@ -44,7 +44,13 @@ const app = express();
 // Security
 app.use(helmet());
 app.use(cors({
-  origin: config.env === 'development' ? '*' : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: config.env === 'development' 
+    ? '*' 
+    : [
+        'http://localhost:3000', 
+        'http://localhost:5173',
+        'https://user-management-system-beta-ten.vercel.app'
+      ],
   credentials: true,
 }));
 
