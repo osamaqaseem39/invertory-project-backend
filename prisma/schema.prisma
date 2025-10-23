@@ -1,0 +1,2410 @@
+// Prisma schema for User Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== ENUMS =====
+
+enum UserRole {
+  master_admin
+  owner_ultimate_super_admin
+  admin
+  cashier
+  inventory_manager
+  guest
+}
+
+enum AuditAction {
+  CREATE_USER
+  UPDATE_USER
+  DELETE_USER
+  LOGIN
+  LOGOUT
+  PASSWORD_RESET
+  ROLE_CHANGE
+  ACTIVATE_USER
+  DEACTIVATE_USER
+  REFRESH_TOKEN
+  CREATE_PRODUCT
+  UPDATE_PRODUCT
+  ARCHIVE_PRODUCT
+  RESTORE_PRODUCT
+  CREATE_CATEGORY
+  UPDATE_CATEGORY
+  CREATE_SUPPLIER
+  UPDATE_SUPPLIER
+  CREATE_PO
+  APPROVE_PO
+  RECEIVE_GRN
+  ADJUST_STOCK
+  APPROVE_ADJUSTMENT
+  // Sales Actions
+  CREATE_CUSTOMER
+  UPDATE_CUSTOMER
+  CREATE_SALES_ORDER
+  UPDATE_SALES_ORDER
+  CREATE_INVOICE
+  PROCESS_PAYMENT
+  START_POS_SESSION
+  END_POS_SESSION
+  PROCESS_SALE
+  PROCESS_RETURN
+  PAID_IN
+  PAID_OUT
+  NO_SALE
+  MANAGER_OVERRIDE
+  APPLY_DISCOUNT
+  VOID_TRANSACTION
+  ISSUE_REFUND
+  PROCESS_EXCHANGE
+  APPLY_COUPON
+  REDEEM_GIFT_CARD
+  ISSUE_GIFT_CARD
+  ADD_STORE_CREDIT
+  USE_STORE_CREDIT
+  REPRINT_RECEIPT
+  PRICE_OVERRIDE
+}
+
+enum POStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum GRNStatus {
+  COMPLETE
+  PARTIAL
+  WITH_DISCREPANCY
+}
+
+enum StockMovementType {
+  IN              // Purchase/Receipt
+  OUT             // Sale
+  ADJUSTMENT      // Manual correction
+  TRANSFER_OUT    // Transfer to another location
+  TRANSFER_IN     // Transfer from another location
+  RETURN          // Customer return
+  DAMAGE          // Write-off
+}
+
+enum AdjustmentReason {
+  DAMAGE
+  THEFT
+  COUNT_ERROR
+  EXPIRED
+  LOST
+  OTHER
+}
+
+enum AdjustmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Client Management Enums
+enum ClientStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  TRIAL
+}
+
+enum MessageType {
+  CREDIT_REQUEST
+  SUPPORT_REQUEST
+  STATUS_UPDATE
+  BILLING_QUERY
+  TECHNICAL_ISSUE
+}
+
+enum MessageStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum MessagePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Sales Enums
+enum SalesOrderStatus {
+  DRAFT
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  CHECK
+  STORE_CREDIT
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum POSSessionStatus {
+  ACTIVE
+  CLOSED
+  SUSPENDED
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
+enum ReturnReason {
+  DEFECTIVE
+  WRONG_ITEM
+  NOT_AS_DESCRIBED
+  CHANGED_MIND
+  DUPLICATE_ORDER
+  OTHER
+}
+
+enum CashEventType {
+  PAID_IN
+  PAID_OUT
+  NO_SALE
+  CASH_DROP
+  PETTY_CASH
+}
+
+enum TaxClass {
+  STANDARD
+  REDUCED
+  ZERO
+  EXEMPT
+}
+
+enum DiscountType {
+  PERCENT
+  FLAT
+}
+
+enum RefundMethod {
+  ORIGINAL_PAYMENT
+  CASH
+  STORE_CREDIT
+  GIFT_CARD
+}
+
+enum PricebookType {
+  BASE
+  PROMOTIONAL
+  SEASONAL
+  CLEARANCE
+}
+
+enum ReceiptStatus {
+  PRINTED
+  EMAILED
+  VOIDED
+}
+
+enum OCRStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REVIEWED
+}
+
+enum OCRSourceType {
+  RECEIPT
+  INVOICE
+  PURCHASE_ORDER
+  PRICE_LIST
+}
+
+// ===== MODELS =====
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  username      String    @unique @db.VarChar(50)
+  email         String    @unique @db.VarChar(255)
+  display_name  String    @db.VarChar(100)
+  password_hash String    @db.VarChar(255)
+  role          UserRole  @default(guest)
+  is_active     Boolean   @default(true)
+  
+  // Relationships
+  created_by_id String?   @db.Uuid
+  created_by    User?     @relation("UserCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  created_users User[]    @relation("UserCreatedBy")
+  
+  // Sessions
+  refresh_tokens RefreshToken[]
+  
+  // Audit
+  audit_logs_actor  AuditLog[] @relation("AuditActor")
+  audit_logs_target AuditLog[] @relation("AuditTarget")
+  
+  // Products
+  created_products Product[] @relation("ProductCreatedBy")
+  updated_products Product[] @relation("ProductUpdatedBy")
+  
+  // Sales Relations
+  created_customers Customer[] @relation("CustomerCreatedBy")
+  created_sales_orders SalesOrder[] @relation("SalesOrderCreatedBy")
+  created_invoices Invoice[] @relation("InvoiceCreatedBy")
+  processed_payments Payment[] @relation("PaymentProcessedBy")
+  created_returns Return[] @relation("ReturnCreatedBy")
+  pos_sessions POSSession[] @relation("POSSessionCashier")
+  
+  // Professional POS Extensions
+  max_line_discount     Decimal? @db.Decimal(5, 2)
+  max_cart_discount     Decimal? @db.Decimal(5, 2)
+  can_approve_overrides Boolean  @default(false)
+  cash_events           CashEvent[] @relation("CashEventActor")
+  overrides_requested   ManagerOverride[] @relation("OverrideRequester")
+  overrides_approved    ManagerOverride[] @relation("OverrideApprover")
+  price_books_created   PriceBook[] @relation("PriceBookCreator")
+  coupons_created       Coupon[] @relation("CouponCreator")
+  gift_cards_issued     GiftCard[] @relation("GiftCardIssuedBy")
+  store_credit_ledger   StoreCreditLedger[] @relation("StoreCreditCreator")
+  system_configs        SystemConfig[]
+  print_settings        PrintSettings[]
+  
+  // OCR Relations
+  ocr_scans_uploaded    OCRScan[]
+  ocr_scans_reviewed    OCRScan[] @relation("OCRReviewedBy")
+  
+  
+  // Notification Relations
+  notifications         Notification[]
+  notifications_created Notification[] @relation("NotificationCreatedBy")
+  notification_preferences NotificationPreference?
+  stock_alerts_created  StockAlert[]
+  
+  // Chat Relations
+  chat_sessions        ChatSession[]
+  
+  // Branding Relations
+  branding_profiles_created BrandingProfile[] @relation("BrandingCreatedBy")
+  branding_profiles_updated BrandingProfile[] @relation("BrandingUpdatedBy")
+  theme_presets_created     ThemePreset[]
+  
+  // Licensing Relations
+  licenses_created          EnhancedLicenseKey[] @relation("LicenseCreatedBy")
+  credit_ledger_entries     CreditLedgerEntry[] @relation("CreditLedgerUser")
+  
+  // Client Management Relations
+  clients_created           ClientInstance[] @relation("ClientCreatedBy")
+  messages_responded        ClientMessage[] @relation("MessageRespondedBy")
+  payment_records           PaymentRecord[] @relation("PaymentProcessedBy")
+  
+  // Timestamps
+  created_at    DateTime  @default(now()) @db.Timestamptz
+  updated_at    DateTime  @updatedAt @db.Timestamptz
+  last_login_at DateTime? @db.Timestamptz
+  
+  @@index([role])
+  @@index([created_by_id])
+  @@index([email])
+  @@index([is_active])
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  token_hash String   @unique @db.VarChar(255)
+  user_agent String?  @db.VarChar(500)
+  ip_address String?  @db.VarChar(45)
+  
+  expires_at DateTime @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id        String      @id @default(uuid()) @db.Uuid
+  
+  // Actor (who performed the action)
+  actor_user_id String   @db.Uuid
+  actor         User     @relation("AuditActor", fields: [actor_user_id], references: [id], onDelete: Cascade)
+  
+  // Target (who was affected)
+  target_user_id String?  @db.Uuid
+  target         User?    @relation("AuditTarget", fields: [target_user_id], references: [id], onDelete: SetNull)
+  
+  action    AuditAction
+  metadata  Json?       @db.JsonB
+  
+  // Context
+  ip_address String?    @db.VarChar(45)
+  user_agent String?    @db.VarChar(500)
+  
+  created_at DateTime   @default(now()) @db.Timestamptz
+  
+  @@index([actor_user_id])
+  @@index([target_user_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  sku         String   @unique @db.VarChar(64)
+  barcode     String?  @unique @db.VarChar(64)
+  name        String   @db.Text
+  description String?  @db.Text
+  brand       String?  @db.Text
+  
+  // Category (will be FK later)
+  category_id String?  @db.Uuid
+  category    Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  
+  // Pricing
+  price       Decimal  @default(0.00) @db.Decimal(12, 2)
+  cost        Decimal? @db.Decimal(12, 2)
+  
+  // Unit of Measure
+  uom         String   @default("unit") @db.VarChar(16)
+  
+  // Inventory Fields (NEW)
+  stock_quantity    Int     @default(0)
+  reorder_level     Int     @default(0)
+  reorder_quantity  Int     @default(0)
+  max_stock_level   Int?
+  location          String? @db.VarChar(100)
+  alert_enabled     Boolean @default(true)
+  
+  // Status
+  is_active   Boolean  @default(true)
+  is_archived Boolean  @default(false)
+  
+  // Relationships
+  created_by_id String  @db.Uuid
+  created_by    User    @relation("ProductCreatedBy", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  updated_by_id String? @db.Uuid
+  updated_by    User?   @relation("ProductUpdatedBy", fields: [updated_by_id], references: [id], onDelete: SetNull)
+  
+  images             ProductImage[]
+  po_items           PurchaseOrderItem[]
+  grn_items          GoodsReceiptItem[]
+  stock_movements    StockMovement[]
+  stock_adjustments  StockAdjustment[]
+  
+  // Sales Relations
+  sales_order_items  SalesOrderItem[]
+  pos_transaction_items POSTransactionItem[]
+  return_items       ReturnItem[]
+  
+  // Professional POS Extensions
+  tax_class          TaxClass  @default(STANDARD)
+  tax_rate_override  Decimal?  @db.Decimal(5, 2)
+  is_weighted        Boolean   @default(false)
+  price_per_unit     Decimal?  @db.Decimal(12, 2)
+  barcode_aliases    BarcodeAlias[]
+  plu_codes          PLUCode[]
+  price_book_items   PriceBookItem[]
+  ocr_products       OCRProduct[]
+  stock_alerts       StockAlert[]
+  
+  // Timestamps
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+  
+  @@index([sku])
+  @@index([barcode])
+  @@index([brand])
+  @@index([category_id])
+  @@index([is_archived])
+  @@index([is_active])
+  @@index([stock_quantity])
+  @@index([reorder_level])
+  @@map("products")
+}
+
+model ProductImage {
+  id         String   @id @default(uuid()) @db.Uuid
+  product_id String   @db.Uuid
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  url        String   @db.Text
+  is_primary Boolean  @default(false)
+  
+  created_at DateTime @default(now()) @db.Timestamptz
+  
+  @@index([product_id])
+  @@index([is_primary])
+  @@map("product_images")
+}
+
+// ===== INVENTORY MODELS =====
+
+model Category {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  parent_id   String?   @db.Uuid
+  parent      Category? @relation("CategoryHierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+  
+  products    Product[]
+  
+  is_active   Boolean   @default(true)
+  sort_order  Int       @default(0)
+  
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  updated_at  DateTime  @updatedAt @db.Timestamptz
+  
+  @@index([parent_id])
+  @@index([is_active])
+  @@index([sort_order])
+  @@map("categories")
+}
+
+model Supplier {
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String    @db.VarChar(200)
+  contact_person  String?   @db.VarChar(100)
+  email           String?   @db.VarChar(255)
+  phone           String?   @db.VarChar(50)
+  address         String?   @db.Text
+  tax_id          String?   @db.VarChar(50)
+  payment_terms   String?   @db.VarChar(50)
+  
+  purchase_orders PurchaseOrder[]
+  
+  is_active       Boolean   @default(true)
+  
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+  
+  @@index([is_active])
+  @@index([name])
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id              String              @id @default(uuid()) @db.Uuid
+  po_number       String              @unique @db.VarChar(50)
+  
+  supplier_id     String              @db.Uuid
+  supplier        Supplier            @relation(fields: [supplier_id], references: [id], onDelete: Restrict)
+  
+  status          POStatus            @default(DRAFT)
+  total_amount    Decimal             @default(0.00) @db.Decimal(12, 2)
+  expected_date   DateTime?           @db.Date
+  notes           String?             @db.Text
+  
+  // Workflow
+  created_by_id   String              @db.Uuid
+  approved_by_id  String?             @db.Uuid
+  
+  items           PurchaseOrderItem[]
+  goods_receipts  GoodsReceipt[]
+  
+  created_at      DateTime            @default(now()) @db.Timestamptz
+  updated_at      DateTime            @updatedAt @db.Timestamptz
+  approved_at     DateTime?           @db.Timestamptz
+  
+  @@index([po_number])
+  @@index([supplier_id])
+  @@index([status])
+  @@index([created_by_id])
+  @@index([expected_date])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id                 String        @id @default(uuid()) @db.Uuid
+  
+  po_id              String        @db.Uuid
+  po                 PurchaseOrder @relation(fields: [po_id], references: [id], onDelete: Cascade)
+  
+  product_id         String        @db.Uuid
+  product            Product       @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  
+  quantity           Int
+  unit_price         Decimal       @db.Decimal(12, 2)
+  received_quantity  Int           @default(0)
+  
+  grn_items          GoodsReceiptItem[]
+  
+  @@index([po_id])
+  @@index([product_id])
+  @@map("purchase_order_items")
+}
+
+model GoodsReceipt {
+  id            String             @id @default(uuid()) @db.Uuid
+  grn_number    String             @unique @db.VarChar(50)
+  
+  po_id         String             @db.Uuid
+  po            PurchaseOrder      @relation(fields: [po_id], references: [id], onDelete: Restrict)
+  
+  received_date DateTime           @db.Date
+  received_by_id String            @db.Uuid
+  
+  status        GRNStatus          @default(COMPLETE)
+  notes         String?            @db.Text
+  
+  items         GoodsReceiptItem[]
+  
+  created_at    DateTime           @default(now()) @db.Timestamptz
+  
+  @@index([grn_number])
+  @@index([po_id])
+  @@index([received_by_id])
+  @@index([received_date])
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptItem {
+  id                 String            @id @default(uuid()) @db.Uuid
+  
+  grn_id             String            @db.Uuid
+  grn                GoodsReceipt      @relation(fields: [grn_id], references: [id], onDelete: Cascade)
+  
+  po_item_id         String            @db.Uuid
+  po_item            PurchaseOrderItem @relation(fields: [po_item_id], references: [id], onDelete: Restrict)
+  
+  product_id         String            @db.Uuid
+  product            Product           @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  
+  expected_quantity  Int
+  received_quantity  Int
+  damaged_quantity   Int               @default(0)
+  
+  notes              String?           @db.Text
+  
+  @@index([grn_id])
+  @@index([po_item_id])
+  @@index([product_id])
+  @@map("goods_receipt_items")
+}
+
+model StockMovement {
+  id              String            @id @default(uuid()) @db.Uuid
+  
+  product_id      String            @db.Uuid
+  product         Product           @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  
+  movement_type   StockMovementType
+  quantity        Int
+  reference_number String?          @db.VarChar(50)
+  reason          String?           @db.Text
+  
+  from_location   String?           @db.VarChar(100)
+  to_location     String?           @db.VarChar(100)
+  
+  performed_by_id String            @db.Uuid
+  
+  created_at      DateTime          @default(now()) @db.Timestamptz
+  
+  @@index([product_id])
+  @@index([movement_type])
+  @@index([performed_by_id])
+  @@index([created_at])
+  @@index([reference_number])
+  @@map("stock_movements")
+}
+
+model StockAdjustment {
+  id              String           @id @default(uuid()) @db.Uuid
+  adjustment_number String         @unique @db.VarChar(50)
+  
+  product_id      String           @db.Uuid
+  product         Product          @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  
+  old_quantity    Int
+  new_quantity    Int
+  difference      Int
+  
+  reason          AdjustmentReason
+  status          AdjustmentStatus @default(PENDING)
+  notes           String?          @db.Text
+  
+  created_by_id   String           @db.Uuid
+  approved_by_id  String?          @db.Uuid
+  
+  created_at      DateTime         @default(now()) @db.Timestamptz
+  approved_at     DateTime?        @db.Timestamptz
+  
+  @@index([adjustment_number])
+  @@index([product_id])
+  @@index([status])
+  @@index([created_by_id])
+  @@index([approved_by_id])
+  @@map("stock_adjustments")
+}
+
+// ===== SALES MODELS =====
+
+model Customer {
+  id              String         @id @default(uuid()) @db.Uuid
+  customer_number String         @unique @db.VarChar(50)
+  
+  // Basic Info
+  first_name      String         @db.VarChar(100)
+  last_name       String         @db.VarChar(100)
+  email           String?        @db.VarChar(255)
+  phone           String?        @db.VarChar(50)
+  
+  // Address
+  address_line1   String?        @db.VarChar(255)
+  address_line2   String?        @db.VarChar(255)
+  city            String?        @db.VarChar(100)
+  state           String?        @db.VarChar(100)
+  postal_code     String?        @db.VarChar(20)
+  country         String?        @db.VarChar(100)
+  
+  // Business Info
+  company_name    String?        @db.VarChar(200)
+  tax_id          String?        @db.VarChar(50)
+  
+  // Customer Settings
+  credit_limit    Decimal?       @default(0.00) @db.Decimal(12, 2)
+  payment_terms   String?        @db.VarChar(50)
+  discount_percentage Decimal?   @default(0.00) @db.Decimal(5, 2)
+  
+  // Status
+  is_active       Boolean        @default(true)
+  is_vip          Boolean        @default(false)
+  
+  // Relationships
+  sales_orders    SalesOrder[]
+  invoices        Invoice[]
+  payments        Payment[]
+  pos_transactions POSTransaction[]
+  returns         Return[]
+  
+  // Professional POS Extensions
+  store_credit_balance Decimal @default(0.00) @db.Decimal(12, 2)
+  loyalty_points       Int     @default(0)
+  store_credit_ledger  StoreCreditLedger[]
+  loyalty_ledger       LoyaltyLedger[]
+  gift_cards           GiftCard[]
+  
+  // Audit
+  created_by_id   String         @db.Uuid
+  created_by      User           @relation("CustomerCreatedBy", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at      DateTime       @default(now()) @db.Timestamptz
+  updated_at      DateTime       @updatedAt @db.Timestamptz
+  
+  @@index([customer_number])
+  @@index([email])
+  @@index([phone])
+  @@index([is_active])
+  @@index([created_by_id])
+  @@map("customers")
+}
+
+model SalesOrder {
+  id              String              @id @default(uuid()) @db.Uuid
+  order_number    String              @unique @db.VarChar(50)
+  
+  // Customer Info
+  customer_id     String              @db.Uuid
+  customer        Customer            @relation(fields: [customer_id], references: [id], onDelete: Restrict)
+  
+  // Order Details
+  status          SalesOrderStatus    @default(DRAFT)
+  total_amount    Decimal             @default(0.00) @db.Decimal(12, 2)
+  tax_amount      Decimal             @default(0.00) @db.Decimal(12, 2)
+  discount_amount Decimal             @default(0.00) @db.Decimal(12, 2)
+  final_amount    Decimal             @default(0.00) @db.Decimal(12, 2)
+  
+  // Dates
+  order_date      DateTime            @default(now()) @db.Timestamptz
+  required_date   DateTime?           @db.Timestamptz
+  shipped_date    DateTime?           @db.Timestamptz
+  delivered_date  DateTime?           @db.Timestamptz
+  
+  // Additional Info
+  notes           String?             @db.Text
+  shipping_address String?            @db.Text
+  
+  // Relationships
+  items           SalesOrderItem[]
+  invoices        Invoice[]
+  returns         Return[]
+  
+  // Audit
+  created_by_id   String              @db.Uuid
+  created_by      User                @relation("SalesOrderCreatedBy", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at      DateTime            @default(now()) @db.Timestamptz
+  updated_at      DateTime            @updatedAt @db.Timestamptz
+  
+  @@index([order_number])
+  @@index([customer_id])
+  @@index([status])
+  @@index([order_date])
+  @@index([created_by_id])
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id              String       @id @default(uuid()) @db.Uuid
+  order_id        String       @db.Uuid
+  order           SalesOrder   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  
+  product_id      String       @db.Uuid
+  product         Product      @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  
+  quantity        Int          @default(1)
+  unit_price      Decimal      @db.Decimal(12, 2)
+  discount_percentage Decimal? @default(0.00) @db.Decimal(5, 2)
+  line_total      Decimal      @db.Decimal(12, 2)
+  
+  @@index([order_id])
+  @@index([product_id])
+  @@map("sales_order_items")
+}
+
+model Invoice {
+  id              String        @id @default(uuid()) @db.Uuid
+  invoice_number  String        @unique @db.VarChar(50)
+  
+  // Customer Info
+  customer_id     String        @db.Uuid
+  customer        Customer      @relation(fields: [customer_id], references: [id], onDelete: Restrict)
+  
+  // Order Reference
+  sales_order_id  String?       @db.Uuid
+  sales_order     SalesOrder?   @relation(fields: [sales_order_id], references: [id], onDelete: SetNull)
+  
+  // Invoice Details
+  status          InvoiceStatus @default(DRAFT)
+  subtotal        Decimal       @default(0.00) @db.Decimal(12, 2)
+  tax_amount      Decimal       @default(0.00) @db.Decimal(12, 2)
+  discount_amount Decimal       @default(0.00) @db.Decimal(12, 2)
+  total_amount    Decimal       @default(0.00) @db.Decimal(12, 2)
+  paid_amount     Decimal       @default(0.00) @db.Decimal(12, 2)
+  balance_amount  Decimal       @default(0.00) @db.Decimal(12, 2)
+  
+  // Dates
+  invoice_date    DateTime      @default(now()) @db.Timestamptz
+  due_date        DateTime      @db.Timestamptz
+  paid_date       DateTime?     @db.Timestamptz
+  
+  // Additional Info
+  notes           String?       @db.Text
+  terms           String?       @db.Text
+  
+  // Relationships
+  payments        Payment[]
+  
+  // Audit
+  created_by_id   String        @db.Uuid
+  created_by      User          @relation("InvoiceCreatedBy", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at      DateTime      @default(now()) @db.Timestamptz
+  updated_at      DateTime      @updatedAt @db.Timestamptz
+  
+  @@index([invoice_number])
+  @@index([customer_id])
+  @@index([sales_order_id])
+  @@index([status])
+  @@index([invoice_date])
+  @@index([due_date])
+  @@index([created_by_id])
+  @@map("invoices")
+}
+
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  payment_number  String        @unique @db.VarChar(50)
+  
+  // Invoice Reference
+  invoice_id      String        @db.Uuid
+  invoice         Invoice       @relation(fields: [invoice_id], references: [id], onDelete: Restrict)
+  
+  // Customer Info
+  customer_id     String        @db.Uuid
+  customer        Customer      @relation(fields: [customer_id], references: [id], onDelete: Restrict)
+  
+  // Payment Details
+  amount          Decimal       @db.Decimal(12, 2)
+  payment_method  PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  
+  // Reference Info
+  reference_number String?      @db.VarChar(100)
+  notes           String?       @db.Text
+  
+  // Dates
+  payment_date    DateTime      @default(now()) @db.Timestamptz
+  
+  // Audit
+  processed_by_id String        @db.Uuid
+  processed_by    User          @relation("PaymentProcessedBy", fields: [processed_by_id], references: [id], onDelete: Restrict)
+  
+  created_at      DateTime      @default(now()) @db.Timestamptz
+  
+  @@index([payment_number])
+  @@index([invoice_id])
+  @@index([customer_id])
+  @@index([payment_method])
+  @@index([status])
+  @@index([payment_date])
+  @@index([processed_by_id])
+  @@map("payments")
+}
+
+model POSSession {
+  id              String            @id @default(uuid()) @db.Uuid
+  session_number  String            @unique @db.VarChar(50)
+  
+  // Cashier Info
+  cashier_id      String            @db.Uuid
+  cashier         User              @relation("POSSessionCashier", fields: [cashier_id], references: [id], onDelete: Restrict)
+  
+  // Session Details
+  status          POSSessionStatus  @default(ACTIVE)
+  starting_cash   Decimal           @default(0.00) @db.Decimal(12, 2)
+  ending_cash     Decimal?          @db.Decimal(12, 2)
+  total_sales     Decimal           @default(0.00) @db.Decimal(12, 2)
+  total_transactions Int            @default(0)
+  
+  // Dates
+  start_time      DateTime          @default(now()) @db.Timestamptz
+  end_time        DateTime?         @db.Timestamptz
+  
+  // Relationships
+  transactions      POSTransaction[]
+  
+  // Professional POS Extensions
+  cash_events       CashEvent[]
+  manager_overrides ManagerOverride[]
+  total_paid_in     Decimal  @default(0.00) @db.Decimal(12, 2)
+  total_paid_out    Decimal  @default(0.00) @db.Decimal(12, 2)
+  
+  @@index([session_number])
+  @@index([cashier_id])
+  @@index([status])
+  @@index([start_time])
+  @@map("pos_sessions")
+}
+
+model POSTransaction {
+  id              String            @id @default(uuid()) @db.Uuid
+  transaction_number String         @unique @db.VarChar(50)
+  
+  // Session Reference
+  session_id      String            @db.Uuid
+  session         POSSession        @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  // Transaction Details
+  transaction_type String           @db.VarChar(50) // SALE, RETURN, REFUND, etc.
+  subtotal        Decimal           @db.Decimal(12, 2)
+  tax_amount      Decimal           @default(0.00) @db.Decimal(12, 2)
+  discount_amount Decimal           @default(0.00) @db.Decimal(12, 2)
+  total_amount    Decimal           @db.Decimal(12, 2)
+  
+  // Payment Info
+  payment_method  PaymentMethod
+  amount_tendered Decimal           @db.Decimal(12, 2)
+  change_amount   Decimal           @default(0.00) @db.Decimal(12, 2)
+  
+  // Customer (optional for walk-in sales)
+  customer_id     String?           @db.Uuid
+  customer        Customer?         @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+  
+  // Additional Info
+  notes           String?           @db.Text
+  
+  // Dates
+  transaction_date DateTime         @default(now()) @db.Timestamptz
+  
+  // Relationships
+  items           POSTransactionItem[]
+  returns         Return[]
+  receipts        Receipt[]
+  
+  // Professional POS Extensions
+  price_book_id          String?  @db.Uuid
+  price_book             PriceBook? @relation(fields: [price_book_id], references: [id], onDelete: SetNull)
+  coupon_code            String?  @db.VarChar(50)
+  coupon_discount        Decimal? @db.Decimal(12, 2)
+  loyalty_points_earned  Int?
+  loyalty_points_used    Int?
+  rounding_delta         Decimal? @db.Decimal(12, 2)
+  is_refund              Boolean  @default(false)
+  original_transaction_id String? @db.Uuid
+  refund_method          RefundMethod?
+  store_credit_ledger    StoreCreditLedger[]
+  loyalty_ledger         LoyaltyLedger[]
+  
+  @@index([transaction_number])
+  @@index([session_id])
+  @@index([transaction_type])
+  @@index([customer_id])
+  @@index([transaction_date])
+  @@index([price_book_id])
+  @@index([is_refund])
+  @@map("pos_transactions")
+}
+
+model POSTransactionItem {
+  id              String            @id @default(uuid()) @db.Uuid
+  transaction_id  String            @db.Uuid
+  transaction     POSTransaction    @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+  
+  product_id      String            @db.Uuid
+  product         Product           @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  
+  quantity        Int               @default(1)
+  unit_price      Decimal           @db.Decimal(12, 2)
+  discount_percentage Decimal?      @default(0.00) @db.Decimal(5, 2)
+  line_total      Decimal           @db.Decimal(12, 2)
+  
+  // Professional POS Extensions
+  tax_class       TaxClass  @default(STANDARD)
+  tax_rate        Decimal   @default(0.00) @db.Decimal(5, 2)
+  tax_amount      Decimal   @default(0.00) @db.Decimal(12, 2)
+  tax_inclusive   Boolean   @default(false)
+  original_price  Decimal?  @db.Decimal(12, 2)
+  discount_reason String?   @db.VarChar(100)
+  weight          Decimal?  @db.Decimal(10, 3)
+  is_refunded     Boolean   @default(false)
+  
+  @@index([transaction_id])
+  @@index([product_id])
+  @@map("pos_transaction_items")
+}
+
+model Return {
+  id              String        @id @default(uuid()) @db.Uuid
+  return_number   String        @unique @db.VarChar(50)
+  
+  // Order/Transaction Reference
+  sales_order_id  String?       @db.Uuid
+  sales_order     SalesOrder?   @relation(fields: [sales_order_id], references: [id], onDelete: SetNull)
+  
+  transaction_id  String?       @db.Uuid
+  transaction     POSTransaction? @relation(fields: [transaction_id], references: [id], onDelete: SetNull)
+  
+  // Customer Info
+  customer_id     String        @db.Uuid
+  customer        Customer      @relation(fields: [customer_id], references: [id], onDelete: Restrict)
+  
+  // Return Details
+  status          ReturnStatus  @default(PENDING)
+  reason          ReturnReason
+  total_amount    Decimal       @default(0.00) @db.Decimal(12, 2)
+  refund_amount   Decimal       @default(0.00) @db.Decimal(12, 2)
+  
+  // Additional Info
+  notes           String?       @db.Text
+  
+  // Dates
+  return_date     DateTime      @default(now()) @db.Timestamptz
+  processed_date  DateTime?     @db.Timestamptz
+  
+  // Relationships
+  items           ReturnItem[]
+  
+  // Audit
+  created_by_id   String        @db.Uuid
+  created_by      User          @relation("ReturnCreatedBy", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at      DateTime      @default(now()) @db.Timestamptz
+  updated_at      DateTime      @updatedAt @db.Timestamptz
+  
+  @@index([return_number])
+  @@index([sales_order_id])
+  @@index([transaction_id])
+  @@index([customer_id])
+  @@index([status])
+  @@index([return_date])
+  @@index([created_by_id])
+  @@map("returns")
+}
+
+model ReturnItem {
+  id              String    @id @default(uuid()) @db.Uuid
+  return_id       String    @db.Uuid
+  return          Return    @relation(fields: [return_id], references: [id], onDelete: Cascade)
+  
+  product_id      String    @db.Uuid
+  product         Product   @relation(fields: [product_id], references: [id], onDelete: Restrict)
+  
+  quantity        Int       @default(1)
+  unit_price      Decimal   @db.Decimal(12, 2)
+  condition       String    @db.VarChar(50) // NEW, USED, DAMAGED
+  line_total      Decimal   @db.Decimal(12, 2)
+  
+  @@index([return_id])
+  @@index([product_id])
+  @@map("return_items")
+}
+
+// ===== PROFESSIONAL POS EXTENSIONS =====
+
+model CashEvent {
+  id          String         @id @default(uuid()) @db.Uuid
+  
+  // Session Reference
+  session_id  String         @db.Uuid
+  session     POSSession     @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  // Event Details
+  type        CashEventType
+  amount      Decimal?       @db.Decimal(12, 2)
+  reason      String         @db.Text
+  reference   String?        @db.VarChar(100)
+  
+  // Actor
+  actor_id    String         @db.Uuid
+  actor       User           @relation("CashEventActor", fields: [actor_id], references: [id], onDelete: Restrict)
+  
+  created_at  DateTime       @default(now()) @db.Timestamptz
+  
+  @@index([session_id])
+  @@index([type])
+  @@index([actor_id])
+  @@index([created_at])
+  @@map("cash_events")
+}
+
+model PriceBook {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String          @db.VarChar(100)
+  description String?         @db.Text
+  type        PricebookType   @default(BASE)
+  priority    Int             @default(0)
+  
+  // Store/Terminal Scope (null = all stores)
+  store_id    String?         @db.Uuid
+  terminal_id String?         @db.Uuid
+  
+  // Dates
+  start_at    DateTime?       @db.Timestamptz
+  end_at      DateTime?       @db.Timestamptz
+  
+  is_active   Boolean         @default(true)
+  
+  // Relationships
+  items       PriceBookItem[]
+  transactions POSTransaction[]
+  
+  // Audit
+  created_by_id String        @db.Uuid
+  created_by    User          @relation("PriceBookCreator", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at  DateTime        @default(now()) @db.Timestamptz
+  updated_at  DateTime        @updatedAt @db.Timestamptz
+  
+  @@index([is_active])
+  @@index([start_at, end_at])
+  @@index([type])
+  @@map("price_books")
+}
+
+model PriceBookItem {
+  id            String     @id @default(uuid()) @db.Uuid
+  
+  price_book_id String     @db.Uuid
+  price_book    PriceBook  @relation(fields: [price_book_id], references: [id], onDelete: Cascade)
+  
+  product_id    String     @db.Uuid
+  product       Product    @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  // Promotional Price
+  promo_price   Decimal    @db.Decimal(12, 2)
+  
+  // Override dates (if different from price book)
+  start_at      DateTime?  @db.Timestamptz
+  end_at        DateTime?  @db.Timestamptz
+  
+  is_active     Boolean    @default(true)
+  
+  created_at    DateTime   @default(now()) @db.Timestamptz
+  
+  @@unique([price_book_id, product_id])
+  @@index([product_id])
+  @@index([is_active])
+  @@map("price_book_items")
+}
+
+model Coupon {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(50)
+  name                String    @db.VarChar(100)
+  description         String?   @db.Text
+  
+  // Discount Details
+  type                DiscountType
+  value               Decimal   @db.Decimal(12, 2)
+  
+  // Constraints
+  min_purchase_amount Decimal?  @db.Decimal(12, 2)
+  max_discount_amount Decimal?  @db.Decimal(12, 2)
+  max_uses            Int?
+  current_uses        Int       @default(0)
+  per_customer_limit  Int?
+  
+  // Dates
+  start_at            DateTime  @db.Timestamptz
+  end_at              DateTime  @db.Timestamptz
+  
+  is_active           Boolean   @default(true)
+  
+  // Audit
+  created_by_id       String    @db.Uuid
+  created_by          User      @relation("CouponCreator", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @updatedAt @db.Timestamptz
+  
+  @@index([code])
+  @@index([is_active])
+  @@index([start_at, end_at])
+  @@map("coupons")
+}
+
+model GiftCard {
+  id              String    @id @default(uuid()) @db.Uuid
+  code            String    @unique @db.VarChar(50)
+  
+  // Balance
+  initial_balance Decimal   @db.Decimal(12, 2)
+  current_balance Decimal   @db.Decimal(12, 2)
+  
+  // Status
+  is_active       Boolean   @default(true)
+  is_used         Boolean   @default(false)
+  
+  // Linked customer (optional)
+  customer_id     String?   @db.Uuid
+  customer        Customer? @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+  
+  // Audit
+  issued_by_id    String    @db.Uuid
+  issued_by       User      @relation("GiftCardIssuedBy", fields: [issued_by_id], references: [id], onDelete: Restrict)
+  
+  issued_at       DateTime  @default(now()) @db.Timestamptz
+  expires_at      DateTime? @db.Timestamptz
+  last_used_at    DateTime? @db.Timestamptz
+  
+  @@index([code])
+  @@index([is_active])
+  @@index([customer_id])
+  @@map("gift_cards")
+}
+
+model StoreCreditLedger {
+  id            String          @id @default(uuid()) @db.Uuid
+  
+  customer_id   String          @db.Uuid
+  customer      Customer        @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  // Transaction
+  delta         Decimal         @db.Decimal(12, 2)
+  balance_after Decimal         @db.Decimal(12, 2)
+  reason        String          @db.Text
+  
+  // Reference
+  transaction_id String?        @db.Uuid
+  transaction    POSTransaction? @relation(fields: [transaction_id], references: [id], onDelete: SetNull)
+  
+  // Actor
+  created_by_id String          @db.Uuid
+  created_by    User            @relation("StoreCreditCreator", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at    DateTime        @default(now()) @db.Timestamptz
+  
+  @@index([customer_id])
+  @@index([created_at])
+  @@map("store_credit_ledger")
+}
+
+model LoyaltyLedger {
+  id             String          @id @default(uuid()) @db.Uuid
+  
+  customer_id    String          @db.Uuid
+  customer       Customer        @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  // Points
+  points_delta   Int
+  balance_after  Int
+  reason         String          @db.Text
+  
+  // Reference
+  transaction_id String?         @db.Uuid
+  transaction    POSTransaction? @relation(fields: [transaction_id], references: [id], onDelete: SetNull)
+  
+  created_at     DateTime        @default(now()) @db.Timestamptz
+  
+  @@index([customer_id])
+  @@index([created_at])
+  @@map("loyalty_ledger")
+}
+
+model BarcodeAlias {
+  id          String   @id @default(uuid()) @db.Uuid
+  
+  product_id  String   @db.Uuid
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  barcode     String   @unique @db.VarChar(64)
+  
+  // Optional metadata
+  description String?  @db.VarChar(200)
+  is_active   Boolean  @default(true)
+  
+  created_at  DateTime @default(now()) @db.Timestamptz
+  
+  @@index([barcode])
+  @@index([product_id])
+  @@map("barcode_aliases")
+}
+
+model PLUCode {
+  id             String   @id @default(uuid()) @db.Uuid
+  
+  plu_code       String   @unique @db.VarChar(20)
+  product_id     String   @db.Uuid
+  product        Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  // For weighted items
+  is_weighted    Boolean  @default(false)
+  price_per_unit Decimal? @db.Decimal(12, 2)
+  
+  is_active      Boolean  @default(true)
+  
+  created_at     DateTime @default(now()) @db.Timestamptz
+  
+  @@index([plu_code])
+  @@index([product_id])
+  @@map("plu_codes")
+}
+
+model ManagerOverride {
+  id                 String     @id @default(uuid()) @db.Uuid
+  
+  // Original request
+  session_id         String     @db.Uuid
+  session            POSSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  requesting_user_id String     @db.Uuid
+  requesting_user    User       @relation("OverrideRequester", fields: [requesting_user_id], references: [id], onDelete: Restrict)
+  
+  // Override
+  override_type      String     @db.VarChar(50)
+  reason_code        String     @db.VarChar(50)
+  reason_detail      String?    @db.Text
+  
+  // Approver
+  approver_id        String     @db.Uuid
+  approver           User       @relation("OverrideApprover", fields: [approver_id], references: [id], onDelete: Restrict)
+  
+  // Metadata
+  metadata           Json?      @db.JsonB
+  
+  approved_at        DateTime   @default(now()) @db.Timestamptz
+  
+  @@index([session_id])
+  @@index([requesting_user_id])
+  @@index([approver_id])
+  @@index([override_type])
+  @@map("manager_overrides")
+}
+
+model SystemConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  
+  key         String   @unique @db.VarChar(100)
+  value       String   @db.Text
+  data_type   String   @db.VarChar(20)
+  category    String   @db.VarChar(50)
+  description String?  @db.Text
+  
+  updated_by_id String? @db.Uuid
+  updated_by    User?   @relation(fields: [updated_by_id], references: [id], onDelete: SetNull)
+  
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+  
+  @@index([category])
+  @@index([key])
+  @@map("system_config")
+}
+
+model Receipt {
+  id              String          @id @default(uuid()) @db.Uuid
+  receipt_number  String          @unique @db.VarChar(50)
+  
+  // Transaction Reference
+  transaction_id  String          @db.Uuid
+  transaction     POSTransaction  @relation(fields: [transaction_id], references: [id], onDelete: Restrict)
+  
+  // Receipt Data (JSON for flexibility)
+  receipt_data    Json            @db.JsonB
+  
+  // Print/Email Status
+  status          ReceiptStatus   @default(PRINTED)
+  printed_at      DateTime?       @db.Timestamptz
+  emailed_at      DateTime?       @db.Timestamptz
+  email_address   String?         @db.VarChar(255)
+  
+  // Reprint tracking
+  reprint_count   Int             @default(0)
+  last_reprinted_at DateTime?     @db.Timestamptz
+  reprinted_by_id String?         @db.Uuid
+  
+  created_at      DateTime        @default(now()) @db.Timestamptz
+  
+  @@index([receipt_number])
+  @@index([transaction_id])
+  @@index([status])
+  @@index([created_at])
+  @@map("receipts")
+}
+
+model PrintSettings {
+  id                  String   @id @default(uuid()) @db.Uuid
+  
+  // Store/Terminal Scope
+  store_id            String?  @db.Uuid
+  terminal_id         String?  @db.Uuid
+  
+  // Business Information
+  business_name       String   @db.VarChar(200)
+  business_address    String?  @db.Text
+  business_phone      String?  @db.VarChar(50)
+  business_email      String?  @db.VarChar(255)
+  tax_id              String?  @db.VarChar(100)
+  
+  // Receipt Settings
+  header_text         String?  @db.Text
+  footer_text         String?  @db.Text
+  return_policy       String?  @db.Text
+  
+  // Print Options
+  print_logo          Boolean  @default(false)
+  logo_url            String?  @db.Text
+  print_barcode       Boolean  @default(true)
+  print_qr_code       Boolean  @default(true)
+  paper_width         Int      @default(80) // mm
+  font_size           Int      @default(12) // pt
+  
+  // Features
+  show_tax_breakdown  Boolean  @default(true)
+  show_cashier_name   Boolean  @default(true)
+  show_customer_info  Boolean  @default(true)
+  
+  is_default          Boolean  @default(false)
+  
+  updated_by_id       String?  @db.Uuid
+  updated_by          User?    @relation(fields: [updated_by_id], references: [id], onDelete: SetNull)
+  
+  created_at          DateTime @default(now()) @db.Timestamptz
+  updated_at          DateTime @updatedAt @db.Timestamptz
+  
+  @@index([is_default])
+  @@map("print_settings")
+}
+
+// ===== OCR & DOCUMENT SCANNING =====
+
+model OCRScan {
+  id               String         @id @default(uuid()) @db.Uuid
+  
+  // File Information
+  file_name        String         @db.VarChar(255)
+  file_path        String         @db.Text
+  file_type        String         @db.VarChar(50) // image/jpeg, application/pdf, etc.
+  file_size        Int            // bytes
+  
+  // Source Information
+  source_type      OCRSourceType
+  source_reference String?        @db.VarChar(100) // PO number, invoice number, etc.
+  
+  // OCR Processing
+  status           OCRStatus      @default(PENDING)
+  raw_text         String?        @db.Text
+  confidence_score Decimal?       @db.Decimal(5, 2) // 0-100
+  processing_time  Int?           // milliseconds
+  error_message    String?        @db.Text
+  
+  // Extracted Data
+  vendor_name      String?        @db.VarChar(255)
+  document_date    DateTime?      @db.Date
+  document_total   Decimal?       @db.Decimal(12, 2)
+  currency         String?        @db.VarChar(10)
+  
+  // Product Extraction
+  products_count   Int            @default(0)
+  products         OCRProduct[]
+  
+  // Audit
+  uploaded_by_id   String         @db.Uuid
+  uploaded_by      User           @relation(fields: [uploaded_by_id], references: [id], onDelete: Restrict)
+  reviewed_by_id   String?        @db.Uuid
+  reviewed_by      User?          @relation("OCRReviewedBy", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  
+  created_at       DateTime       @default(now()) @db.Timestamptz
+  updated_at       DateTime       @updatedAt @db.Timestamptz
+  reviewed_at      DateTime?      @db.Timestamptz
+  
+  @@index([uploaded_by_id])
+  @@index([status])
+  @@index([source_type])
+  @@index([created_at])
+  @@map("ocr_scans")
+}
+
+model OCRProduct {
+  id                String      @id @default(uuid()) @db.Uuid
+  
+  // Scan Reference
+  scan_id           String      @db.Uuid
+  scan              OCRScan     @relation(fields: [scan_id], references: [id], onDelete: Cascade)
+  
+  // Extracted Product Data
+  raw_text          String      @db.Text // Original OCR text for this product line
+  line_number       Int         // Position in the document
+  
+  // Product Details
+  name              String      @db.VarChar(255)
+  sku               String?     @db.VarChar(100)
+  barcode           String?     @db.VarChar(100)
+  description       String?     @db.Text
+  
+  // Pricing
+  quantity          Decimal?    @db.Decimal(12, 3)
+  unit_price        Decimal?    @db.Decimal(12, 2)
+  total_price       Decimal?    @db.Decimal(12, 2)
+  
+  // Matching
+  matched_product_id String?    @db.Uuid
+  matched_product    Product?   @relation(fields: [matched_product_id], references: [id], onDelete: SetNull)
+  confidence_score   Decimal?   @db.Decimal(5, 2)
+  
+  // Review Status
+  is_reviewed        Boolean    @default(false)
+  is_approved        Boolean    @default(false)
+  is_added_to_inventory Boolean @default(false)
+  
+  // Manual Corrections
+  corrected_name     String?    @db.VarChar(255)
+  corrected_sku      String?    @db.VarChar(100)
+  corrected_price    Decimal?   @db.Decimal(12, 2)
+  correction_notes   String?    @db.Text
+  
+  created_at         DateTime   @default(now()) @db.Timestamptz
+  updated_at         DateTime   @updatedAt @db.Timestamptz
+  
+  @@index([scan_id])
+  @@index([matched_product_id])
+  @@index([is_approved])
+  @@map("ocr_products")
+}
+
+// ===== NOTIFICATIONS & ALERTS =====
+
+enum NotificationType {
+  STOCK_LOW
+  STOCK_OUT
+  STOCK_CRITICAL
+  STOCK_REORDER
+  PRODUCT_EXPIRING
+  PRODUCT_EXPIRED
+  PO_PENDING_APPROVAL
+  ADJUSTMENT_PENDING
+  PAYMENT_OVERDUE
+  SYSTEM_ALERT
+  USER_ACTION
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
+model Notification {
+  id                String              @id @default(uuid()) @db.Uuid
+  
+  // Notification Details
+  type              NotificationType
+  priority          NotificationPriority @default(MEDIUM)
+  title             String              @db.VarChar(255)
+  message           String              @db.Text
+  
+  // Context
+  resource_type     String?             @db.VarChar(50) // product, purchase_order, etc.
+  resource_id       String?             @db.Uuid
+  action_url        String?             @db.Text // Deep link to resource
+  
+  // Metadata
+  metadata          Json?               // Additional context data
+  
+  // Recipients
+  user_id           String?             @db.Uuid
+  user              User?               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role_target       UserRole?           // Notify all users with this role
+  
+  // Status
+  is_read           Boolean             @default(false)
+  is_dismissed      Boolean             @default(false)
+  read_at           DateTime?           @db.Timestamptz
+  dismissed_at      DateTime?           @db.Timestamptz
+  
+  // Delivery
+  channels          NotificationChannel[] @default([IN_APP])
+  email_sent        Boolean             @default(false)
+  sms_sent          Boolean             @default(false)
+  push_sent         Boolean             @default(false)
+  
+  // Audit
+  created_by_id     String?             @db.Uuid
+  created_by        User?               @relation("NotificationCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  
+  created_at        DateTime            @default(now()) @db.Timestamptz
+  updated_at        DateTime            @updatedAt @db.Timestamptz
+  expires_at        DateTime?           @db.Timestamptz
+  
+  @@index([user_id])
+  @@index([type])
+  @@index([priority])
+  @@index([is_read])
+  @@index([created_at])
+  @@index([role_target])
+  @@map("notifications")
+}
+
+model StockAlert {
+  id                String              @id @default(uuid()) @db.Uuid
+  
+  // Product Reference
+  product_id        String              @db.Uuid
+  product           Product             @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  // Alert Configuration
+  alert_type        NotificationType    @default(STOCK_LOW)
+  threshold         Int                 // Alert when stock <= threshold
+  
+  // Alert Status
+  is_active         Boolean             @default(true)
+  last_triggered_at DateTime?           @db.Timestamptz
+  trigger_count     Int                 @default(0)
+  
+  // Notification Settings
+  notify_roles      UserRole[]          @default([owner_ultimate_super_admin, admin, inventory_manager])
+  cooldown_hours    Int                 @default(24) // Min hours between alerts
+  
+  // Audit
+  created_by_id     String              @db.Uuid
+  created_by        User                @relation(fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at        DateTime            @default(now()) @db.Timestamptz
+  updated_at        DateTime            @updatedAt @db.Timestamptz
+  
+  @@unique([product_id, alert_type])
+  @@index([product_id])
+  @@index([is_active])
+  @@index([last_triggered_at])
+  @@map("stock_alerts")
+}
+
+model NotificationPreference {
+  id                String              @id @default(uuid()) @db.Uuid
+  
+  // User
+  user_id           String              @unique @db.Uuid
+  user              User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  // Channel Preferences
+  enable_in_app     Boolean             @default(true)
+  enable_email      Boolean             @default(true)
+  enable_sms        Boolean             @default(false)
+  enable_push       Boolean             @default(false)
+  
+  // Notification Type Preferences
+  stock_alerts      Boolean             @default(true)
+  po_alerts         Boolean             @default(true)
+  payment_alerts    Boolean             @default(true)
+  system_alerts     Boolean             @default(true)
+  
+  // Quiet Hours
+  quiet_hours_start Int?                // Hour (0-23)
+  quiet_hours_end   Int?                // Hour (0-23)
+  
+  // Digest Settings
+  daily_digest      Boolean             @default(false)
+  digest_time       Int?                // Hour (0-23)
+  
+  created_at        DateTime            @default(now()) @db.Timestamptz
+  updated_at        DateTime            @updatedAt @db.Timestamptz
+  
+  @@map("notification_preferences")
+}
+
+// ===== AI CHATBOT =====
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model ChatSession {
+  id                String              @id @default(uuid()) @db.Uuid
+  
+  // Session Info
+  session_name      String?             @db.VarChar(255)
+  
+  // User
+  user_id           String?             @db.Uuid
+  user              User?               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  // Guest Support (for non-logged users)
+  guest_id          String?             @db.VarChar(100)
+  
+  // Session State
+  is_active         Boolean             @default(true)
+  message_count     Int                 @default(0)
+  
+  // Messages
+  messages          ChatMessage[]
+  
+  // Timestamps
+  created_at        DateTime            @default(now()) @db.Timestamptz
+  updated_at        DateTime            @updatedAt @db.Timestamptz
+  last_message_at   DateTime            @default(now()) @db.Timestamptz
+  
+  @@index([user_id])
+  @@index([guest_id])
+  @@index([is_active])
+  @@index([last_message_at])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id                String              @id @default(uuid()) @db.Uuid
+  
+  // Session
+  session_id        String              @db.Uuid
+  session           ChatSession         @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  // Message
+  role              ChatMessageRole
+  content           String              @db.Text
+  
+  // AI Metadata
+  model             String?             @db.VarChar(100) // e.g., "llama-3.1-70b"
+  tokens_used       Int?
+  response_time     Int?                // milliseconds
+  
+  // Context
+  context_used      Json?               // FAQ context provided
+  
+  // Feedback
+  is_helpful        Boolean?
+  feedback_text     String?             @db.Text
+  
+  // Timestamps
+  created_at        DateTime            @default(now()) @db.Timestamptz
+  
+  @@index([session_id])
+  @@index([role])
+  @@index([created_at])
+  @@map("chat_messages")
+}
+
+// ===== BRANDING SYSTEM =====
+
+enum ThemeMode {
+  LIGHT
+  DARK
+  AUTO
+}
+
+enum LogoPosition {
+  LEFT
+  CENTER
+  RIGHT
+}
+
+enum FontFamily {
+  INTER
+  ROBOTO
+  OPEN_SANS
+  LATO
+  POPPINS
+  CAIRO
+  AMIRI
+}
+
+model BrandingProfile {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Company Information
+  company_name          String              @db.VarChar(255)
+  company_name_ar       String?             @db.VarChar(255)
+  tagline               String?             @db.VarChar(255)
+  
+  // Contact Information
+  business_address      String?             @db.Text
+  business_phone        String?             @db.VarChar(50)
+  business_email        String?             @db.VarChar(255)
+  business_website      String?             @db.VarChar(255)
+  tax_id                String?             @db.VarChar(100)
+  
+  // Logo Files
+  logo_original         String?             @db.Text
+  logo_header           String?             @db.Text
+  logo_receipt          String?             @db.Text
+  logo_pdf              String?             @db.Text
+  logo_email            String?             @db.Text
+  logo_thumbnail        String?             @db.Text
+  logo_base64           String?             @db.Text
+  favicon_32            String?             @db.Text
+  favicon_16            String?             @db.Text
+  
+  // Color Palette
+  primary_color         String              @default("#3B82F6") @db.VarChar(7)
+  secondary_color       String              @default("#8B5CF6") @db.VarChar(7)
+  accent_color          String              @default("#EC4899") @db.VarChar(7)
+  success_color         String              @default("#10B981") @db.VarChar(7)
+  warning_color         String              @default("#F59E0B") @db.VarChar(7)
+  error_color           String              @default("#EF4444") @db.VarChar(7)
+  
+  // Generated Palette (stored as JSON)
+  color_palette         Json?               // Complete palette with shades
+  
+  // Typography
+  font_family           FontFamily          @default(INTER)
+  font_family_custom    String?             @db.VarChar(100)
+  heading_font          String?             @db.VarChar(100)
+  body_font             String?             @db.VarChar(100)
+  
+  // Theme
+  theme_mode            ThemeMode           @default(LIGHT)
+  
+  // CSS Output (cached)
+  generated_css         String?             @db.Text
+  css_version           Int                 @default(1)
+  
+  // Receipt Branding
+  receipt_header_text   String?             @db.Text
+  receipt_footer_text   String?             @db.Text
+  receipt_logo_position LogoPosition        @default(CENTER)
+  receipt_logo_size     Int                 @default(200) // width in px
+  show_logo_on_receipt  Boolean             @default(true)
+  
+  // Invoice Branding
+  invoice_template      String              @default("modern") @db.VarChar(50)
+  invoice_header_color  String?             @db.VarChar(7)
+  invoice_watermark     String?             @db.VarChar(100)
+  show_watermark        Boolean             @default(false)
+  watermark_opacity     Int                 @default(10) // percentage
+  
+  // Settings
+  is_active             Boolean             @default(true)
+  is_default            Boolean             @default(false)
+  
+  // Audit
+  created_by_id         String              @db.Uuid
+  created_by            User                @relation("BrandingCreatedBy", fields: [created_by_id], references: [id], onDelete: Restrict)
+  updated_by_id         String?             @db.Uuid
+  updated_by            User?               @relation("BrandingUpdatedBy", fields: [updated_by_id], references: [id], onDelete: SetNull)
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  updated_at            DateTime            @updatedAt @db.Timestamptz
+  
+  @@index([is_active])
+  @@index([is_default])
+  @@map("branding_profiles")
+}
+
+model ThemePreset {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Preset Info
+  name                  String              @db.VarChar(100)
+  description           String?             @db.Text
+  preview_image         String?             @db.Text
+  
+  // Colors
+  primary_color         String              @db.VarChar(7)
+  secondary_color       String              @db.VarChar(7)
+  accent_color          String              @db.VarChar(7)
+  
+  // Metadata
+  is_builtin            Boolean             @default(false)
+  is_public             Boolean             @default(true)
+  usage_count           Int                 @default(0)
+  
+  // Audit
+  created_by_id         String?             @db.Uuid
+  created_by            User?               @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  
+  @@index([is_builtin])
+  @@index([is_public])
+  @@map("theme_presets")
+}
+
+// ===== LICENSING & TRIAL PROTECTION SYSTEM =====
+
+enum TrialStatus {
+  ACTIVE
+  EXHAUSTED
+  ACTIVATED
+  REVOKED
+  EXPIRED
+}
+
+enum LicenseType {
+  TRIAL
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+  MONTHLY
+  YEARLY
+  PERPETUAL
+}
+
+enum LicenseStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  EXPIRED
+}
+
+enum ActivationMethod {
+  ONLINE
+  OFFLINE
+  MANUAL
+}
+
+// Global trial registry - tracks ALL trials across ALL devices
+model TrialRegistry {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Device Identity
+  device_fingerprint    String              @unique @db.VarChar(64)
+  hardware_signature    String              @db.VarChar(128) // Enhanced: MAC+CPU+MB+Disk
+  
+  // Trial Information
+  trial_guest_id        String              @db.VarChar(64)
+  status                TrialStatus         @default(ACTIVE)
+  credits_allocated     Int                 @default(50)
+  credits_used          Int                 @default(0)
+  credits_remaining     Int                 @default(50)
+  
+  // Timestamps
+  first_seen_at         DateTime            @default(now()) @db.Timestamptz
+  last_seen_at          DateTime            @default(now()) @db.Timestamptz
+  trial_started_at      DateTime            @default(now()) @db.Timestamptz
+  trial_exhausted_at    DateTime?           @db.Timestamptz
+  activated_at          DateTime?           @db.Timestamptz
+  
+  // Anti-Abuse Tracking
+  ip_address            String?             @db.Inet
+  user_agent            String?             @db.Text
+  country_code          String?             @db.VarChar(2)
+  timezone              String?             @db.VarChar(50)
+  
+  // Activation Info (if trial converted to paid)
+  license_key_id        String?             @db.Uuid
+  license_key           EnhancedLicenseKey? @relation(fields: [license_key_id], references: [id], onDelete: SetNull)
+  
+  // Flags
+  is_vm_detected        Boolean             @default(false)
+  is_suspicious         Boolean             @default(false)
+  reinstall_attempts    Int                 @default(0)
+  
+  // Relations
+  credit_ledger         CreditLedgerEntry[]
+  
+  @@index([device_fingerprint])
+  @@index([hardware_signature])
+  @@index([status])
+  @@index([trial_started_at])
+  @@index([is_suspicious])
+  @@map("trial_registry")
+}
+
+// Hardware fingerprint history - detect hardware changes
+model HardwareFingerprint {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Device Identity
+  device_fingerprint    String              @db.VarChar(64)
+  hardware_signature    String              @db.VarChar(128)
+  
+  // Hardware Components (for forensics)
+  mac_address           String?             @db.VarChar(17)
+  cpu_id                String?             @db.VarChar(64)
+  motherboard_serial    String?             @db.VarChar(64)
+  disk_serial           String?             @db.VarChar(64)
+  system_uuid           String?             @db.VarChar(64)
+  
+  // System Info
+  platform              String              @db.VarChar(20) // win32, darwin, linux
+  os_version            String?             @db.VarChar(50)
+  hostname              String?             @db.VarChar(255)
+  
+  // Tracking
+  first_seen_at         DateTime            @default(now()) @db.Timestamptz
+  last_seen_at          DateTime            @default(now()) @db.Timestamptz
+  seen_count            Int                 @default(1)
+  
+  // VM Detection
+  is_virtual_machine    Boolean             @default(false)
+  vm_type               String?             @db.VarChar(20) // VirtualBox, VMware, Hyper-V
+  
+  @@index([device_fingerprint])
+  @@index([hardware_signature])
+  @@index([mac_address])
+  @@map("hardware_fingerprints")
+}
+
+// Enhanced license keys with device binding
+model EnhancedLicenseKey {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // License Key
+  license_key           String              @unique @db.VarChar(64)
+  license_type          LicenseType         @default(STARTER)
+  status                LicenseStatus       @default(PENDING)
+  
+  // Device Binding
+  device_fingerprint    String?             @db.VarChar(64)
+  hardware_signature    String?             @db.VarChar(128)
+  max_activations       Int                 @default(1) // How many devices allowed
+  activation_count      Int                 @default(0)
+  
+  // Customer Info
+  customer_email        String              @db.VarChar(255)
+  customer_name         String?             @db.VarChar(255)
+  company_name          String?             @db.VarChar(255)
+  
+  // Financial
+  purchase_amount       Decimal?            @db.Decimal(10, 2)
+  currency              String?             @default("USD") @db.VarChar(3)
+  payment_id            String?             @db.VarChar(255) // Stripe/PayPal ID
+  
+  // Validity
+  issued_at             DateTime            @default(now()) @db.Timestamptz
+  activated_at          DateTime?           @db.Timestamptz
+  expires_at            DateTime?           @db.Timestamptz // NULL = perpetual
+  
+  // Activation Method
+  activation_method     ActivationMethod?
+  activation_ip         String?             @db.Inet
+  
+  // Features & Limits
+  features_json         Json?               // Custom features enabled
+  credit_limit          Int?                // Monthly credit limit (NULL = unlimited)
+  
+  // Security
+  jwt_token             String?             @db.Text // Signed JWT for offline validation
+  public_key            String?             @db.Text // For JWT verification
+  
+  // Anti-Piracy
+  is_revoked            Boolean             @default(false)
+  revoked_at            DateTime?           @db.Timestamptz
+  revocation_reason     String?             @db.Text
+  
+  // Client Management (Phase 2)
+  client_instance_id    String?             @db.Uuid
+  max_credits           Int?                // Maximum credits for this license
+  current_credits       Int?                // Current available credits
+  features              String?             @db.Text // Comma-separated features list
+  
+  // Relations
+  trial_registry        TrialRegistry[]
+  activation_history    LicenseActivation[]
+  client_instances      ClientInstance[]
+  
+  // Audit
+  created_by_id         String?             @db.Uuid
+  created_by            User?               @relation("LicenseCreatedBy", fields: [created_by_id], references: [id], onDelete: SetNull)
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  updated_at            DateTime            @updatedAt @db.Timestamptz
+  
+  @@index([license_key])
+  @@index([device_fingerprint])
+  @@index([status])
+  @@index([customer_email])
+  @@index([expires_at])
+  @@map("enhanced_license_keys")
+}
+
+// License activation history - track all activation attempts
+model LicenseActivation {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // License Reference
+  license_key_id        String              @db.Uuid
+  license_key           EnhancedLicenseKey  @relation(fields: [license_key_id], references: [id], onDelete: Cascade)
+  
+  // Device Identity
+  device_fingerprint    String              @db.VarChar(64)
+  hardware_signature    String              @db.VarChar(128)
+  
+  // Activation Details
+  activation_method     ActivationMethod
+  success               Boolean             @default(false)
+  failure_reason        String?             @db.Text
+  
+  // Network Info
+  ip_address            String?             @db.Inet
+  user_agent            String?             @db.Text
+  country_code          String?             @db.VarChar(2)
+  
+  // Timestamp
+  attempted_at          DateTime            @default(now()) @db.Timestamptz
+  
+  // Flags
+  is_suspicious         Boolean             @default(false)
+  
+  @@index([license_key_id])
+  @@index([device_fingerprint])
+  @@index([attempted_at])
+  @@map("license_activations")
+}
+
+// Credit ledger enhancements for trial tracking
+model CreditLedgerEntry {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Account Reference
+  trial_registry_id     String?             @db.Uuid
+  trial_registry        TrialRegistry?      @relation(fields: [trial_registry_id], references: [id], onDelete: Cascade)
+  
+  user_id               String?             @db.Uuid
+  user                  User?               @relation("CreditLedgerUser", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  // Transaction
+  entry_type            String              @db.VarChar(20) // CONSUME, TOPUP, REFUND
+  amount                Int                 // Negative for consumption
+  balance_before        Int
+  balance_after         Int
+  
+  // Context
+  action                String              @db.VarChar(50) // invoice_create, product_add, etc.
+  reference_id          String?             @db.VarChar(64) // Invoice ID, etc.
+  idempotency_key       String              @unique @db.VarChar(64)
+  
+  // Metadata
+  metadata              Json?
+  
+  // Timestamp
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  
+  @@index([trial_registry_id])
+  @@index([user_id])
+  @@index([created_at])
+  @@index([idempotency_key])
+  @@map("credit_ledger_entries")
+}
+
+// Suspicious activity log
+model SuspiciousActivity {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Device
+  device_fingerprint    String              @db.VarChar(64)
+  hardware_signature    String?             @db.VarChar(128)
+  
+  // Activity Type
+  activity_type         String              @db.VarChar(50) // TRIAL_RESET, LICENSE_SHARE, VM_DETECTED
+  severity              String              @db.VarChar(20) // LOW, MEDIUM, HIGH, CRITICAL
+  
+  // Details
+  description           String              @db.Text
+  evidence_json         Json?
+  
+  // Network
+  ip_address            String?             @db.Inet
+  
+  // Response
+  action_taken          String?             @db.VarChar(50) // BLOCKED, FLAGGED, ALLOWED
+  
+  // Timestamp
+  detected_at           DateTime            @default(now()) @db.Timestamptz
+  
+  @@index([device_fingerprint])
+  @@index([activity_type])
+  @@index([severity])
+  @@index([detected_at])
+  @@map("suspicious_activities")
+}
+
+// ===== CLIENT MANAGEMENT MODELS =====
+
+// Client instances for multi-client distribution
+model ClientInstance {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Client Identity
+  client_name           String              @db.VarChar(255)
+  client_code           String              @unique @db.VarChar(50)
+  device_fingerprint    String              @unique @db.VarChar(64)
+  hardware_signature    String              @db.VarChar(128)
+  
+  // Status
+  status                ClientStatus        @default(TRIAL)
+  
+  // Trial/License Reference
+  trial_guest_id        String?             @db.VarChar(64)
+  license_key_id        String?             @db.Uuid
+  license_key           EnhancedLicenseKey? @relation(fields: [license_key_id], references: [id], onDelete: SetNull)
+  
+  // Contact Information
+  contact_email         String              @db.VarChar(255)
+  contact_phone         String?             @db.VarChar(50)
+  company_name          String?             @db.VarChar(255)
+  country               String?             @db.VarChar(2)
+  timezone              String?             @db.VarChar(50)
+  
+  // Timestamps
+  first_seen_at         DateTime            @default(now()) @db.Timestamptz
+  last_seen_at          DateTime            @default(now()) @db.Timestamptz
+  last_sync_at          DateTime?           @db.Timestamptz
+  
+  // Relationships
+  created_by_id         String              @db.Uuid
+  created_by            User                @relation("ClientCreatedBy", fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  // Related Data
+  usage_stats           ClientUsageStats[]
+  messages              ClientMessage[]
+  notifications         ClientNotification[]
+  credit_purchases      CreditPurchase[]
+  billing_records       BillingRecord[]
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  updated_at            DateTime            @updatedAt @db.Timestamptz
+  
+  @@index([client_code])
+  @@index([device_fingerprint])
+  @@index([status])
+  @@index([contact_email])
+  @@index([created_by_id])
+  @@index([last_seen_at])
+  @@map("client_instances")
+}
+
+// Client usage statistics
+model ClientUsageStats {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Client Reference
+  client_instance_id    String              @db.Uuid
+  client_instance       ClientInstance      @relation(fields: [client_instance_id], references: [id], onDelete: Cascade)
+  
+  // Date
+  date                  DateTime            @db.Date
+  
+  // Usage Metrics
+  credits_consumed      Int                 @default(0)
+  invoices_created      Int                 @default(0)
+  sales_amount          Decimal             @default(0.00) @db.Decimal(12, 2)
+  active_users          Int                 @default(0)
+  login_count           Int                 @default(0)
+  sync_count            Int                 @default(0)
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  
+  @@unique([client_instance_id, date])
+  @@index([client_instance_id])
+  @@index([date])
+  @@map("client_usage_stats")
+}
+
+// Client messages for communication
+model ClientMessage {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Client Reference
+  client_instance_id    String              @db.Uuid
+  client_instance       ClientInstance      @relation(fields: [client_instance_id], references: [id], onDelete: Cascade)
+  
+  // Message Details
+  message_type          MessageType
+  subject               String              @db.VarChar(255)
+  message_content       String              @db.Text
+  status                MessageStatus       @default(PENDING)
+  priority              MessagePriority     @default(MEDIUM)
+  
+  // Response
+  response_content      String?             @db.Text
+  responded_by_id       String?             @db.Uuid
+  responded_by          User?               @relation("MessageRespondedBy", fields: [responded_by_id], references: [id], onDelete: SetNull)
+  responded_at          DateTime?           @db.Timestamptz
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  updated_at            DateTime            @updatedAt @db.Timestamptz
+  
+  @@index([client_instance_id])
+  @@index([message_type])
+  @@index([status])
+  @@index([priority])
+  @@index([created_at])
+  @@map("client_messages")
+}
+
+// Client notifications
+model ClientNotification {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Client Reference
+  client_instance_id    String              @db.Uuid
+  client_instance       ClientInstance      @relation(fields: [client_instance_id], references: [id], onDelete: Cascade)
+  
+  // Notification Details
+  notification_type     String              @db.VarChar(50)
+  title                 String              @db.VarChar(255)
+  message               String              @db.Text
+  is_read               Boolean             @default(false)
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  
+  @@index([client_instance_id])
+  @@index([is_read])
+  @@index([created_at])
+  @@map("client_notifications")
+}
+
+// Credit Purchase System
+model CreditPurchase {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Client Reference
+  client_instance_id    String              @db.Uuid
+  client_instance       ClientInstance      @relation(fields: [client_instance_id], references: [id], onDelete: Cascade)
+  
+  // Purchase Details
+  credit_pack           String              @db.VarChar(50)
+  credits_purchased     Int
+  price_per_credit      Decimal             @db.Decimal(10, 4)
+  total_cost            Decimal             @db.Decimal(10, 2)
+  payment_method        String              @db.VarChar(50)
+  status                String              @default("COMPLETED") @db.VarChar(20)
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  updated_at            DateTime            @updatedAt @db.Timestamptz
+  
+  @@index([client_instance_id])
+  @@index([credit_pack])
+  @@index([status])
+  @@index([created_at])
+  @@map("credit_purchases")
+}
+
+// Billing System
+model BillingRecord {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Client Reference
+  client_instance_id    String              @db.Uuid
+  client_instance       ClientInstance      @relation(fields: [client_instance_id], references: [id], onDelete: Cascade)
+  
+  // Billing Details
+  billing_type          String              @db.VarChar(50)
+  amount                Decimal             @db.Decimal(10, 2)
+  description           String              @db.Text
+  payment_method        String              @db.VarChar(50)
+  status                String              @default("PENDING") @db.VarChar(20)
+  paid_amount           Decimal?            @db.Decimal(10, 2)
+  transaction_id        String?             @db.VarChar(255)
+  due_date              DateTime?           @db.Timestamptz
+  paid_at               DateTime?           @db.Timestamptz
+  
+  // Relations
+  payment_records       PaymentRecord[]
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  updated_at            DateTime            @updatedAt @db.Timestamptz
+  
+  @@index([client_instance_id])
+  @@index([billing_type])
+  @@index([status])
+  @@index([due_date])
+  @@index([created_at])
+  @@map("billing_records")
+}
+
+model PaymentRecord {
+  id                    String              @id @default(uuid()) @db.Uuid
+  
+  // Billing Reference
+  billing_record_id     String              @db.Uuid
+  billing_record        BillingRecord       @relation(fields: [billing_record_id], references: [id], onDelete: Cascade)
+  
+  // Payment Details
+  amount                Decimal             @db.Decimal(10, 2)
+  payment_method        String              @db.VarChar(50)
+  transaction_id        String              @db.VarChar(255)
+  processed_by_id       String              @db.Uuid
+  processed_by          User                @relation("PaymentProcessedBy", fields: [processed_by_id], references: [id], onDelete: Cascade)
+  processed_at          DateTime            @default(now()) @db.Timestamptz
+  
+  created_at            DateTime            @default(now()) @db.Timestamptz
+  
+  @@index([billing_record_id])
+  @@index([payment_method])
+  @@index([processed_at])
+  @@map("payment_records")
+}

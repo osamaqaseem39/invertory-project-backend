@@ -1,0 +1,29 @@
+# === Node Modules (all folders) ===
+**/node_modules/
+
+# === Build and Distribution ===
+dist/
+build/
+.cache/
+temp/
+coverage/
+prisma/migrations/**/migration.sql.backup
+
+# === Electron Builds & Binaries ===
+electron/dist-electron/
+*.exe
+*.dll
+*.zip
+*.rar
+
+# === Environment & Local Config ===
+.env
+.env.local
+
+# === System & Editor Files ===
+.DS_Store
+*.log
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,409 @@
+// ===== PROFESSIONAL POS FEATURE EXTENSIONS =====
+// Add these models to your existing schema.prisma file
+
+// ===== NEW ENUMS =====
+
+enum CashEventType {
+  PAID_IN
+  PAID_OUT
+  NO_SALE
+  CASH_DROP
+  PETTY_CASH
+}
+
+enum TaxClass {
+  STANDARD
+  REDUCED
+  ZERO
+  EXEMPT
+}
+
+enum DiscountType {
+  PERCENT
+  FLAT
+}
+
+enum RefundMethod {
+  ORIGINAL_PAYMENT
+  CASH
+  STORE_CREDIT
+  GIFT_CARD
+}
+
+enum PricebookType {
+  BASE
+  PROMOTIONAL
+  SEASONAL
+  CLEARANCE
+}
+
+// ===== EXTEND EXISTING AUDIT ACTIONS =====
+// Add to AuditAction enum:
+// PAID_IN
+// PAID_OUT
+// NO_SALE
+// MANAGER_OVERRIDE
+// APPLY_DISCOUNT
+// VOID_TRANSACTION
+// ISSUE_REFUND
+// PROCESS_EXCHANGE
+// APPLY_COUPON
+// REDEEM_GIFT_CARD
+// REPRINT_RECEIPT
+
+// ===== NEW MODELS =====
+
+model CashEvent {
+  id          String         @id @default(uuid()) @db.Uuid
+  
+  // Session Reference
+  session_id  String         @db.Uuid
+  session     POSSession     @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  // Event Details
+  type        CashEventType
+  amount      Decimal?       @db.Decimal(12, 2)
+  reason      String         @db.Text
+  reference   String?        @db.VarChar(100)
+  
+  // Actor
+  actor_id    String         @db.Uuid
+  actor       User           @relation(fields: [actor_id], references: [id], onDelete: Restrict)
+  
+  created_at  DateTime       @default(now()) @db.Timestamptz
+  
+  @@index([session_id])
+  @@index([type])
+  @@index([actor_id])
+  @@index([created_at])
+  @@map("cash_events")
+}
+
+model PriceBook {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String          @db.VarChar(100)
+  description String?         @db.Text
+  type        PricebookType   @default(BASE)
+  priority    Int             @default(0)
+  
+  // Store/Terminal Scope (null = all stores)
+  store_id    String?         @db.Uuid
+  terminal_id String?         @db.Uuid
+  
+  // Dates
+  start_at    DateTime?       @db.Timestamptz
+  end_at      DateTime?       @db.Timestamptz
+  
+  is_active   Boolean         @default(true)
+  
+  // Relationships
+  items       PriceBookItem[]
+  
+  // Audit
+  created_by_id String        @db.Uuid
+  created_by    User          @relation(fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at  DateTime        @default(now()) @db.Timestamptz
+  updated_at  DateTime        @updatedAt @db.Timestamptz
+  
+  @@index([is_active])
+  @@index([start_at, end_at])
+  @@index([type])
+  @@map("price_books")
+}
+
+model PriceBookItem {
+  id            String     @id @default(uuid()) @db.Uuid
+  
+  price_book_id String     @db.Uuid
+  price_book    PriceBook  @relation(fields: [price_book_id], references: [id], onDelete: Cascade)
+  
+  product_id    String     @db.Uuid
+  product       Product    @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  // Promotional Price
+  promo_price   Decimal    @db.Decimal(12, 2)
+  
+  // Override dates (if different from price book)
+  start_at      DateTime?  @db.Timestamptz
+  end_at        DateTime?  @db.Timestamptz
+  
+  is_active     Boolean    @default(true)
+  
+  created_at    DateTime   @default(now()) @db.Timestamptz
+  
+  @@unique([price_book_id, product_id])
+  @@index([product_id])
+  @@index([is_active])
+  @@map("price_book_items")
+}
+
+model Coupon {
+  id                  String    @id @default(uuid()) @db.Uuid
+  code                String    @unique @db.VarChar(50)
+  name                String    @db.VarChar(100)
+  description         String?   @db.Text
+  
+  // Discount Details
+  type                DiscountType
+  value               Decimal   @db.Decimal(12, 2)
+  
+  // Constraints
+  min_purchase_amount Decimal?  @db.Decimal(12, 2)
+  max_discount_amount Decimal?  @db.Decimal(12, 2)
+  max_uses            Int?
+  current_uses        Int       @default(0)
+  per_customer_limit  Int?
+  
+  // Dates
+  start_at            DateTime  @db.Timestamptz
+  end_at              DateTime  @db.Timestamptz
+  
+  is_active           Boolean   @default(true)
+  
+  // Audit
+  created_by_id       String    @db.Uuid
+  created_by          User      @relation(fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @updatedAt @db.Timestamptz
+  
+  @@index([code])
+  @@index([is_active])
+  @@index([start_at, end_at])
+  @@map("coupons")
+}
+
+model GiftCard {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        String    @unique @db.VarChar(50)
+  
+  // Balance
+  initial_balance Decimal @db.Decimal(12, 2)
+  current_balance Decimal @db.Decimal(12, 2)
+  
+  // Status
+  is_active   Boolean   @default(true)
+  is_used     Boolean   @default(false)
+  
+  // Linked customer (optional)
+  customer_id String?   @db.Uuid
+  customer    Customer? @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+  
+  // Audit
+  issued_by_id String   @db.Uuid
+  issued_by    User     @relation("GiftCardIssuedBy", fields: [issued_by_id], references: [id], onDelete: Restrict)
+  
+  issued_at   DateTime  @default(now()) @db.Timestamptz
+  expires_at  DateTime? @db.Timestamptz
+  last_used_at DateTime? @db.Timestamptz
+  
+  @@index([code])
+  @@index([is_active])
+  @@index([customer_id])
+  @@map("gift_cards")
+}
+
+model StoreCreditLedger {
+  id          String    @id @default(uuid()) @db.Uuid
+  
+  customer_id String    @db.Uuid
+  customer    Customer  @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  // Transaction
+  delta       Decimal   @db.Decimal(12, 2) // Positive = credit added, Negative = used
+  balance_after Decimal @db.Decimal(12, 2)
+  reason      String    @db.Text
+  
+  // Reference
+  transaction_id String? @db.Uuid
+  transaction    POSTransaction? @relation(fields: [transaction_id], references: [id], onDelete: SetNull)
+  
+  // Actor
+  created_by_id String  @db.Uuid
+  created_by    User    @relation(fields: [created_by_id], references: [id], onDelete: Restrict)
+  
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  
+  @@index([customer_id])
+  @@index([created_at])
+  @@map("store_credit_ledger")
+}
+
+model LoyaltyLedger {
+  id          String    @id @default(uuid()) @db.Uuid
+  
+  customer_id String    @db.Uuid
+  customer    Customer  @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  
+  // Points
+  points_delta Int      // Positive = earned, Negative = redeemed
+  balance_after Int
+  reason      String    @db.Text
+  
+  // Reference
+  transaction_id String? @db.Uuid
+  transaction    POSTransaction? @relation(fields: [transaction_id], references: [id], onDelete: SetNull)
+  
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  
+  @@index([customer_id])
+  @@index([created_at])
+  @@map("loyalty_ledger")
+}
+
+model BarcodeAlias {
+  id          String   @id @default(uuid()) @db.Uuid
+  
+  product_id  String   @db.Uuid
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  barcode     String   @unique @db.VarChar(64)
+  
+  // Optional metadata
+  description String?  @db.VarChar(200)
+  is_active   Boolean  @default(true)
+  
+  created_at  DateTime @default(now()) @db.Timestamptz
+  
+  @@index([barcode])
+  @@index([product_id])
+  @@map("barcode_aliases")
+}
+
+model PLUCode {
+  id          String   @id @default(uuid()) @db.Uuid
+  
+  plu_code    String   @unique @db.VarChar(20)
+  product_id  String   @db.Uuid
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  
+  // For weighted items
+  is_weighted Boolean  @default(false)
+  price_per_unit Decimal? @db.Decimal(12, 2) // e.g., price per kg
+  
+  is_active   Boolean  @default(true)
+  
+  created_at  DateTime @default(now()) @db.Timestamptz
+  
+  @@index([plu_code])
+  @@index([product_id])
+  @@map("plu_codes")
+}
+
+model ManagerOverride {
+  id              String   @id @default(uuid()) @db.Uuid
+  
+  // Original request
+  session_id      String   @db.Uuid
+  session         POSSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  
+  requesting_user_id String @db.Uuid
+  requesting_user    User   @relation("OverrideRequester", fields: [requesting_user_id], references: [id], onDelete: Restrict)
+  
+  // Override
+  override_type   String   @db.VarChar(50) // DISCOUNT, PRICE_CHANGE, VOID, REFUND
+  reason_code     String   @db.VarChar(50)
+  reason_detail   String?  @db.Text
+  
+  // Approver
+  approver_id     String   @db.Uuid
+  approver        User     @relation("OverrideApprover", fields: [approver_id], references: [id], onDelete: Restrict)
+  
+  // Metadata
+  metadata        Json?    @db.JsonB
+  
+  approved_at     DateTime @default(now()) @db.Timestamptz
+  
+  @@index([session_id])
+  @@index([requesting_user_id])
+  @@index([approver_id])
+  @@index([override_type])
+  @@map("manager_overrides")
+}
+
+model SystemConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  
+  key         String   @unique @db.VarChar(100)
+  value       String   @db.Text
+  data_type   String   @db.VarChar(20) // string, number, boolean, json
+  category    String   @db.VarChar(50) // pos, tax, discount, etc.
+  description String?  @db.Text
+  
+  updated_by_id String? @db.Uuid
+  updated_by    User?   @relation(fields: [updated_by_id], references: [id], onDelete: SetNull)
+  
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @updatedAt @db.Timestamptz
+  
+  @@index([category])
+  @@index([key])
+  @@map("system_config")
+}
+
+// ===== EXTEND EXISTING MODELS =====
+
+// Add to Product model:
+// tax_class            TaxClass @default(STANDARD)
+// tax_rate_override    Decimal? @db.Decimal(5, 2)
+// is_weighted          Boolean  @default(false)
+// price_per_unit       Decimal? @db.Decimal(12, 2)
+// barcode_aliases      BarcodeAlias[]
+// plu_codes            PLUCode[]
+// price_book_items     PriceBookItem[]
+
+// Add to Customer model:
+// store_credit_balance Decimal  @default(0.00) @db.Decimal(12, 2)
+// loyalty_points       Int      @default(0)
+// credit_limit         Decimal? @db.Decimal(12, 2)
+// store_credit_ledger  StoreCreditLedger[]
+// loyalty_ledger       LoyaltyLedger[]
+// gift_cards           GiftCard[]
+
+// Add to POSSession model:
+// cash_events          CashEvent[]
+// manager_overrides    ManagerOverride[]
+// total_paid_in        Decimal  @default(0.00) @db.Decimal(12, 2)
+// total_paid_out       Decimal  @default(0.00) @db.Decimal(12, 2)
+
+// Add to POSTransaction model:
+// price_book_id        String?  @db.Uuid
+// price_book           PriceBook? @relation(fields: [price_book_id], references: [id], onDelete: SetNull)
+// coupon_code          String?  @db.VarChar(50)
+// coupon_discount      Decimal? @db.Decimal(12, 2)
+// loyalty_points_earned Int?
+// loyalty_points_used   Int?
+// rounding_delta       Decimal? @db.Decimal(12, 2)
+// is_refund            Boolean  @default(false)
+// original_transaction_id String? @db.Uuid
+// refund_method        RefundMethod?
+// store_credit_ledger  StoreCreditLedger[]
+// loyalty_ledger       LoyaltyLedger[]
+
+// Add to POSTransactionItem model:
+// tax_class            TaxClass @default(STANDARD)
+// tax_rate             Decimal  @default(0.00) @db.Decimal(5, 2)
+// tax_amount           Decimal  @default(0.00) @db.Decimal(12, 2)
+// tax_inclusive        Boolean  @default(false)
+// original_price       Decimal  @db.Decimal(12, 2)
+// discount_reason      String?  @db.VarChar(100)
+// weight               Decimal? @db.Decimal(10, 3)
+// is_refunded          Boolean  @default(false)
+
+// Add to User model:
+// max_line_discount    Decimal? @db.Decimal(5, 2)
+// max_cart_discount    Decimal? @db.Decimal(5, 2)
+// can_approve_overrides Boolean @default(false)
+// cash_events          CashEvent[]
+// overrides_requested  ManagerOverride[] @relation("OverrideRequester")
+// overrides_approved   ManagerOverride[] @relation("OverrideApprover")
+// price_books          PriceBook[]
+// coupons              Coupon[]
+// gift_cards_issued    GiftCard[] @relation("GiftCardIssuedBy")
+// store_credit_ledger  StoreCreditLedger[]
+
+
+
+
+
