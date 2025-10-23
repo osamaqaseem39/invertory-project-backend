@@ -56,6 +56,7 @@ export const CreateUserPage = () => {
       [UserRole.CASHIER]: 'from-green-500 to-emerald-500',
       [UserRole.INVENTORY_MANAGER]: 'from-orange-500 to-amber-500',
       [UserRole.GUEST]: 'from-slate-500 to-gray-500',
+      [UserRole.MASTER_ADMIN]: 'from-red-500 to-rose-500',
     };
     return colors[role] || 'from-slate-500 to-gray-500';
   };

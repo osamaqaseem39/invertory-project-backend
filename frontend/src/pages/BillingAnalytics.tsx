@@ -6,14 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   DollarSign, 
   CreditCard, 
-  TrendingUp, 
   BarChart3,
-  PieChart,
-  Calendar,
   FileText,
   Download,
   Plus,
-  Eye,
   CheckCircle,
   Clock,
   AlertCircle

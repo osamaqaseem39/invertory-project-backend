@@ -129,7 +129,7 @@ export const GoodsReceiptPage = () => {
         {/* Header */}
         <div className="glass rounded-3xl p-6 shadow-xl animate-slide-down">
           <h1 className="text-3xl font-bold gradient-text mb-2">{t.nav.goodsReceipt}</h1>
-          <p className="text-slate-600 text-sm">{t.inventory.receiveGoods || 'Receive goods against approved purchase orders'}</p>
+          <p className="text-slate-600 text-sm">Receive goods against approved purchase orders</p>
         </div>
 
         {/* Approved POs */}

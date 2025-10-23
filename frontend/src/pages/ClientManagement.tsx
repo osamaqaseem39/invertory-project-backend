@@ -18,8 +18,6 @@ import {
   CreditCard,
   MessageSquare,
   Settings,
-  Trash2,
-  Edit,
   Eye
 } from 'lucide-react';
 

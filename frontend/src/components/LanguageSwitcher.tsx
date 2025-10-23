@@ -1,7 +1,7 @@
 import { useTranslation } from '../i18n/i18nContext';
 
 export const LanguageSwitcher = () => {
-  const { language, setLanguage, t } = useTranslation();
+  const { language, setLanguage } = useTranslation();
 
   return (
     <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm p-1">

@@ -54,7 +54,12 @@ export const ProductDetailPage = () => {
         barcode: data.barcode || '',
         description: data.description || '',
         brand: data.brand || '',
-        category: data.category || '',
+        category_id: data.category_id || '',
+        stock_quantity: data.stock_quantity || 0,
+        reorder_level: data.reorder_level || 0,
+        reorder_quantity: data.reorder_quantity || 0,
+        max_stock_level: data.max_stock_level || 0,
+        location: '',
         price: Number(data.price),
         cost: Number(data.cost) || 0,
         uom: data.uom,
@@ -77,7 +82,7 @@ export const ProductDetailPage = () => {
         sku: editForm.sku,
         description: editForm.description || null,
         brand: editForm.brand || null,
-        category: editForm.category || null,
+        category_id: editForm.category_id || null,
         price: editForm.price,
         uom: editForm.uom,
         is_active: editForm.is_active,
@@ -194,7 +199,7 @@ export const ProductDetailPage = () => {
                   </svg>
                   {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button onClick={() => { setIsEditMode(false); setEditForm({ name: product.name, sku: product.sku, barcode: product.barcode || '', description: product.description || '', brand: product.brand || '', category: product.category || '', price: Number(product.price), cost: Number(product.cost) || 0, uom: product.uom, is_active: product.is_active }); }} className="btn-secondary">
+                <button onClick={() => { setIsEditMode(false); setEditForm({ name: product.name, sku: product.sku, barcode: product.barcode || '', description: product.description || '', brand: product.brand || '', category_id: product.category_id || '', stock_quantity: product.stock_quantity || 0, reorder_level: product.reorder_level || 0, reorder_quantity: product.reorder_quantity || 0, max_stock_level: product.max_stock_level || 0, location: '', price: Number(product.price), cost: Number(product.cost) || 0, uom: product.uom, is_active: product.is_active }); }} className="btn-secondary">
                   Cancel
                 </button>
               </>
@@ -295,11 +300,11 @@ export const ProductDetailPage = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Category ID</label>
                       <input
                         type="text"
-                        value={editForm.category}
-                        onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                        value={editForm.category_id}
+                        onChange={(e) => setEditForm({...editForm, category_id: e.target.value})}
                         className="input-field"
                       />
                     </div>

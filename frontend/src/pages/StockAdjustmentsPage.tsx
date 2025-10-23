@@ -101,7 +101,7 @@ export const StockAdjustmentsPage = () => {
         <div className="glass rounded-3xl p-6 shadow-xl animate-slide-down flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold gradient-text mb-2">{t.nav.stockAdjustments}</h1>
-            <p className="text-slate-600 text-sm">{t.inventory.manualCorrections || 'Manual stock corrections with approval workflow'}</p>
+            <p className="text-slate-600 text-sm">Manual stock corrections with approval workflow</p>
           </div>
           {canCreate && (
             <button onClick={() => setShowModal(true)} className="btn-primary">
@@ -325,7 +325,7 @@ export const StockAdjustmentsPage = () => {
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="btn-primary flex-1">
-                  {t.inventory.createAdjustment || 'Create Adjustment Request'}
+                  Create Adjustment Request
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary px-8">
                   Cancel

@@ -93,9 +93,14 @@ export interface Product {
   description?: string;
   brand?: string;
   category?: string;
+  category_id?: string;
   price: number;
   cost?: number;
   uom: string;
+  stock_quantity: number;
+  reorder_level: number;
+  reorder_quantity?: number;
+  max_stock_level?: number;
   is_active: boolean;
   is_archived: boolean;
   created_by_id: string;

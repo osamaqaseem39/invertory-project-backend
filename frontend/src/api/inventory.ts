@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Category, Supplier, PurchaseOrder, StockAdjustment, StockMovement } from '../types';
+import { Category, Supplier, PurchaseOrder, StockAdjustment, Product } from '../types';
 
 export const inventoryAPI = {
   // ===== CATEGORIES =====
@@ -137,6 +137,24 @@ export const inventoryAPI = {
 
   async getInventoryStats() {
     const response = await apiClient.get('/inventory/stats');
+    return response.data;
+  },
+
+  // ===== GOODS RECEIPTS =====
+  async createGoodsReceipt(data: {
+    po_id: string;
+    received_date: string;
+    notes?: string;
+    items: Array<{
+      po_item_id: string;
+      product_id: string;
+      expected_quantity: number;
+      received_quantity: number;
+      damaged_quantity: number;
+      notes?: string;
+    }>;
+  }) {
+    const response = await apiClient.post('/inventory/goods-receipts', data);
     return response.data;
   },
 };

@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/i18nContext';
-import { useAuthStore } from '../store/authStore';
 import brandingAPI, { BrandingProfile, CreateBrandingData } from '../api/branding';
 import LogoUpload from '../components/LogoUpload';
 import ColorPicker from '../components/ColorPicker';
 
 const BrandingManagementPage: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const token = localStorage.getItem('access_token');
 
   const [brandings, setBrandings] = useState<BrandingProfile[]>([]);

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../i18n/i18nContext';
-import { useAuthStore } from '../store/authStore';
 import brandingAPI, { ThemePreset, BrandingProfile } from '../api/branding';
 
 const ThemePresetsPage: React.FC = () => {

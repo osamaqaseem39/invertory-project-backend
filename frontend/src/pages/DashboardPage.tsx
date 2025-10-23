@@ -46,16 +46,6 @@ export const DashboardPage = () => {
     }
   };
 
-  const getRoleColor = (role: UserRole): string => {
-    const colors: Record<UserRole, string> = {
-      [UserRole.OWNER_ULTIMATE_SUPER_ADMIN]: 'from-purple-500 to-pink-500',
-      [UserRole.ADMIN]: 'from-blue-500 to-cyan-500',
-      [UserRole.CASHIER]: 'from-green-500 to-emerald-500',
-      [UserRole.INVENTORY_MANAGER]: 'from-orange-500 to-amber-500',
-      [UserRole.GUEST]: 'from-slate-500 to-gray-500',
-    };
-    return colors[role] || 'from-slate-500 to-gray-500';
-  };
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleString();
@@ -200,7 +190,7 @@ export const DashboardPage = () => {
                   Top Categories
                 </h3>
                 <div className="space-y-3">
-                  {productStats.productsByCategory.slice(0,5).map((cat, idx) => (
+                  {productStats.productsByCategory.slice(0,5).map((cat) => (
                     <div key={cat.category} className="flex justify-between items-center p-3 glass rounded-xl hover:scale-105 transition-transform">
                       <span className="font-medium text-slate-700">{cat.category}</span>
                       <span className="px-3 py-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold text-sm rounded-lg">{cat.count}</span>
@@ -217,7 +207,7 @@ export const DashboardPage = () => {
                   Top Brands
                 </h3>
                 <div className="space-y-3">
-                  {productStats.productsByBrand.slice(0,5).map((brand, idx) => (
+                  {productStats.productsByBrand.slice(0,5).map((brand) => (
                     <div key={brand.brand} className="flex justify-between items-center p-3 glass rounded-xl hover:scale-105 transition-transform">
                       <span className="font-medium text-slate-700">{brand.brand}</span>
                       <span className="px-3 py-1 bg-gradient-to-r from-accent-500 to-accent-600 text-white font-semibold text-sm rounded-lg">{brand.count}</span>
@@ -241,7 +231,7 @@ export const DashboardPage = () => {
                 </Link>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {productStats.recentProducts.slice(0, 4).map((product, idx) => (
+                {productStats.recentProducts.slice(0, 4).map((product) => (
                   <Link
                     key={product.id}
                     to={`/products/${product.id}`}

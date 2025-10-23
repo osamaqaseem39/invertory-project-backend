@@ -59,7 +59,7 @@ export const TrialMonitor: React.FC = () => {
                 to="/licensing/activate"
                 className="block text-center w-full px-4 py-2 bg-white text-red-600 rounded-lg font-medium hover:bg-red-50 transition-all"
               >
-                {t.licensing?.activate || 'Activate Now'}
+                {t.licensing?.activateButton || 'Activate Now'}
               </Link>
             </div>
           </div>

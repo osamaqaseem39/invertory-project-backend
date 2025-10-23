@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n/i18nContext';
 import licensingAPI from '../api/licensing';
 import { getOrGenerateFingerprint } from '../utils/device-fingerprint';
 
 const LicenseActivationPage: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const [licenseKey, setLicenseKey] = useState('');
   const [activating, setActivating] = useState(false);
@@ -34,7 +32,7 @@ const LicenseActivationPage: React.FC = () => {
       setActivating(true);
       setError(null);
 
-      const result = await licensingAPI.activateLicense(
+      await licensingAPI.activateLicense(
         licenseKey.trim().toUpperCase(),
         deviceFingerprint,
         hardwareSignature,
@@ -45,7 +43,7 @@ const LicenseActivationPage: React.FC = () => {
       alert(t.licensing?.activationSuccess || 'License activated successfully! Welcome to the full version.');
       
       // Redirect to dashboard
-      navigate('/');
+      window.location.href = '/';
     } catch (err: any) {
       const errorMessage = err.response?.data?.error?.message || 'Activation failed. Please check your license key.';
       setError(errorMessage);

@@ -4,7 +4,7 @@ import { BarcodeScanner } from '../components/BarcodeScanner';
 import { ReceiptModal } from '../components/ReceiptModal';
 import { useAuthStore } from '../store/authStore';
 import { useTranslation } from '../i18n/i18nContext';
-import { Product, Customer, POSSession, POSTransaction, POSTransactionItem, PaymentMethod } from '../types';
+import { Product, Customer, POSSession, POSTransactionItem, PaymentMethod, POSSessionStatus } from '../types';
 import { productsAPI } from '../api/products';
 import { salesAPI } from '../api/sales';
 import { receiptsAPI, ReceiptData } from '../api/receipts';
@@ -23,7 +23,7 @@ export const POSPage = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [amountTendered, setAmountTendered] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -100,7 +100,7 @@ export const POSPage = () => {
     try {
       const sessionsResponse = await salesAPI.pos.listSessions({ 
         cashier_id: user.id,
-        status: 'ACTIVE' 
+        status: POSSessionStatus.ACTIVE 
       });
       
       if (sessionsResponse.data && sessionsResponse.data.length > 0) {

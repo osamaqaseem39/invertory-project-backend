@@ -265,9 +265,9 @@ export const ProductsPage = () => {
                           {product.brand}
                         </span>
                       )}
-                      {product.category?.name && (
+                      {product.category && (
                         <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-semibold rounded-lg">
-                          {product.category.name}
+                          {product.category}
                         </span>
                       )}
                     </div>

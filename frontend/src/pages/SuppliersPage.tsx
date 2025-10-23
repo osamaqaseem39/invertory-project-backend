@@ -95,7 +95,7 @@ export const SuppliersPage = () => {
         <div className="glass rounded-3xl p-6 shadow-xl animate-slide-down flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold gradient-text mb-2">{t.suppliers.suppliers}</h1>
-            <p className="text-slate-600 text-sm">{t.suppliers.manageSuppliers || 'Manage your vendors and suppliers'}</p>
+            <p className="text-slate-600 text-sm">Manage your vendors and suppliers</p>
           </div>
           {canManage && (
             <button onClick={() => handleOpenModal()} className="btn-primary">

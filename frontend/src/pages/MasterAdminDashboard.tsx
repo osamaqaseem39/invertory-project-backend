@@ -9,9 +9,6 @@ import {
   TrendingUp, 
   Activity,
   DollarSign,
-  BarChart3,
-  PieChart,
-  Calendar,
   AlertCircle,
   CheckCircle,
   Clock

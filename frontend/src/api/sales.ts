@@ -6,14 +6,10 @@ import {
   Payment,
   POSSession,
   POSTransaction,
-  Return,
   SalesStatistics,
   PaymentMethod,
   SalesOrderStatus,
-  InvoiceStatus,
   POSSessionStatus,
-  ReturnStatus,
-  ReturnReason,
 } from '../types';
 
 // ===== CUSTOMER API =====
