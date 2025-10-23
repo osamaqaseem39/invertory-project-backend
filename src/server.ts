@@ -49,7 +49,8 @@ app.use(cors({
     : [
         'http://localhost:3000', 
         'http://localhost:5173',
-        'https://user-management-system-beta-ten.vercel.app'
+        'https://ums.plivix-tech.com',
+        process.env.CORS_ORIGIN!
       ],
   credentials: true,
 }));
