@@ -1,5 +1,5 @@
 import { ClientStatus, UserRole } from '@prisma/client';
-import { ConflictError, NotFoundError, AuthorizationError } from '../utils/errors';
+import { ConflictError, NotFoundError } from '../utils/errors';
 import { RBACService } from './rbac.service';
 import logger from '../utils/logger';
 import prisma from '../database/client';
@@ -509,7 +509,7 @@ export class ClientManagementService {
       activeClients,
       trialClients,
       totalCreditsConsumed: usageStats._sum.credits_consumed || 0,
-      totalRevenue: usageStats._sum.sales_amount || 0,
+      totalRevenue: Number(usageStats._sum.sales_amount) || 0,
       recentClients,
       topClientsByUsage,
     };

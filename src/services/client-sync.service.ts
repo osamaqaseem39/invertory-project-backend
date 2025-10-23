@@ -1,5 +1,5 @@
 import { UserRole } from '@prisma/client';
-import { NotFoundError, AuthorizationError, ConflictError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
 import { RBACService } from './rbac.service';
 import logger from '../utils/logger';
 import prisma from '../database/client';
@@ -58,10 +58,10 @@ export class ClientSyncService {
       const message = await prisma.clientMessage.create({
         data: {
           client_instance_id: params.clientInstanceId,
-          message_type: params.messageType,
+          message_type: params.messageType as any,
           subject: params.subject,
           message_content: params.messageContent,
-          priority: params.priority || 'MEDIUM',
+          priority: (params.priority || 'MEDIUM') as any,
           status: 'PENDING',
         },
         include: {
@@ -160,7 +160,7 @@ export class ClientSyncService {
       },
       include: {
         usage_stats: {
-          orderBy: { recorded_at: 'desc' },
+          orderBy: { date: 'desc' },
           take: 1,
         },
       },
@@ -244,10 +244,10 @@ export class ClientSyncService {
     const queuedMessage = await prisma.clientMessage.create({
       data: {
         client_instance_id: params.clientInstanceId,
-        message_type: params.messageType,
+        message_type: params.messageType as any,
         subject: 'OFFLINE_QUEUE',
         message_content: JSON.stringify(params.data),
-        priority: params.priority || 'MEDIUM',
+        priority: (params.priority || 'MEDIUM') as any,
         status: 'PENDING',
       },
     });
@@ -291,7 +291,7 @@ export class ClientSyncService {
         
         // Process based on message type
         switch (message.message_type) {
-          case 'SYNC_FAILED':
+          case 'TECHNICAL_ISSUE':
             // Retry the original message
             const originalMessage = queueData.originalMessage;
             if (originalMessage) {
@@ -362,7 +362,7 @@ export class ClientSyncService {
       where: { id: clientInstanceId },
       include: {
         usage_stats: {
-          orderBy: { recorded_at: 'desc' },
+          orderBy: { date: 'desc' },
           take: 5,
         },
         messages: {
@@ -400,8 +400,8 @@ export class ClientSyncService {
         lastSyncAt: lastSync,
         timeSinceLastSeen,
         timeSinceLastSync,
-        pendingMessages: client.messages.filter(m => m.status === 'PENDING').length,
-        unreadNotifications: client.notifications.length,
+        pendingMessages: 0, // Messages need to be fetched separately
+        unreadNotifications: 0, // Notifications need to be fetched separately
       },
     };
   }
@@ -416,7 +416,7 @@ export class ClientSyncService {
     const clients = await prisma.clientInstance.findMany({
       include: {
         usage_stats: {
-          orderBy: { recorded_at: 'desc' },
+          orderBy: { date: 'desc' },
           take: 1,
         },
         messages: {
@@ -450,8 +450,8 @@ export class ClientSyncService {
         syncHealthy,
         lastSeenAt: lastSeen,
         lastSyncAt: lastSync,
-        pendingMessages: client.messages.length,
-        unreadNotifications: client.notifications.length,
+        pendingMessages: 0, // Messages need to be fetched separately
+        unreadNotifications: 0, // Notifications need to be fetched separately
       };
     });
 

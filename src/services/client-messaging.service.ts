@@ -1,5 +1,5 @@
 import { UserRole } from '@prisma/client';
-import { ConflictError, NotFoundError, AuthorizationError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
 import { RBACService } from './rbac.service';
 import logger from '../utils/logger';
 import prisma from '../database/client';
@@ -56,10 +56,10 @@ export class ClientMessagingService {
     const message = await prisma.clientMessage.create({
       data: {
         client_instance_id: params.clientInstanceId,
-        message_type: params.messageType,
+        message_type: params.messageType as any,
         subject: params.subject,
         message_content: params.messageContent,
-        priority: params.priority || 'MEDIUM',
+        priority: (params.priority || 'MEDIUM') as any,
         status: 'PENDING',
       },
       include: {
@@ -305,7 +305,7 @@ export class ClientMessagingService {
    */
   static async updateMessageStatus(
     messageId: string,
-    status: MessageStatus,
+    status: string,
     actorRole: UserRole,
     actorId: string
   ): Promise<any> {
@@ -322,7 +322,7 @@ export class ClientMessagingService {
 
     const updatedMessage = await prisma.clientMessage.update({
       where: { id: messageId },
-      data: { status },
+      data: { status: status as any },
       include: {
         client_instance: {
           select: {

@@ -2,14 +2,14 @@ import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { requireMasterAdmin } from '../middleware/rbac.middleware';
 import { MasterAnalyticsSimpleService } from '../services/master-analytics-simple.service';
-import { z } from 'zod';
+// import { z } from 'zod';
 
 const router = Router();
 
 // UUID parameter schema
-const clientIdParamSchema = z.object({
-  clientId: z.string().uuid()
-});
+// const clientIdParamSchema = z.object({
+//   clientId: z.string().uuid()
+// });
 
 /**
  * GET /master-dashboard
@@ -19,7 +19,7 @@ router.get(
   '/master-dashboard',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (_req, res, next) => {
     try {
       const analytics = await MasterAnalyticsSimpleService.getMasterDashboard();
       res.status(200).json({
@@ -62,7 +62,7 @@ router.get(
   '/revenue-analytics',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (_req, res, next) => {
     try {
       const dashboard = await MasterAnalyticsSimpleService.getMasterDashboard();
       
@@ -100,7 +100,7 @@ router.get(
   '/client-performance',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (_req, res, next) => {
     try {
       const dashboard = await MasterAnalyticsSimpleService.getMasterDashboard();
       
@@ -144,7 +144,7 @@ router.get(
   '/system-health',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (_req, res, next) => {
     try {
       const dashboard = await MasterAnalyticsSimpleService.getMasterDashboard();
       

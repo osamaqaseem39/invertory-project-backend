@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { ClientManagementService } from '../services/client-management.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 import { validateBody, validateQuery } from '../middleware/validation.middleware';
-import { AuthorizationError } from '../utils/errors';
+// import { AuthorizationError } from '../utils/errors';
 import {
   createClientInstanceSchema,
   updateClientInstanceSchema,

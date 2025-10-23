@@ -1,5 +1,5 @@
 import { UserRole } from '@prisma/client';
-import { NotFoundError, AuthorizationError, ConflictError } from '../utils/errors';
+import { NotFoundError, ConflictError } from '../utils/errors';
 import { RBACService } from './rbac.service';
 import logger from '../utils/logger';
 import prisma from '../database/client';
@@ -59,7 +59,7 @@ export class AdvancedLicenseService {
       data: {
         license_key: licenseKey,
         client_instance_id: params.clientInstanceId,
-        license_type: params.licenseType,
+        license_type: params.licenseType as any,
         status: 'ACTIVE',
         max_credits: params.maxCredits,
         current_credits: params.maxCredits,
@@ -72,7 +72,7 @@ export class AdvancedLicenseService {
         company_name: client.company_name,
       },
       include: {
-        client_instance: {
+        client_instances: {
           select: {
             id: true,
             client_name: true,
@@ -155,7 +155,7 @@ export class AdvancedLicenseService {
     await prisma.enhancedLicenseKey.update({
       where: { id: license.id },
       data: {
-        current_credits: license.current_credits + params.amount,
+        current_credits: (license.current_credits || 0) + params.amount,
       },
     });
 
@@ -165,7 +165,7 @@ export class AdvancedLicenseService {
         client_instance_id: params.clientInstanceId,
         notification_type: 'CREDITS_PURCHASED',
         title: 'Credits Purchased',
-        message: `${params.amount} credits purchased for $${totalCost.toFixed(2)}. New balance: ${license.current_credits + params.amount}`,
+        message: `${params.amount} credits purchased for $${totalCost.toFixed(2)}. New balance: ${(license.current_credits || 0) + params.amount}`,
       },
     });
 
@@ -179,7 +179,7 @@ export class AdvancedLicenseService {
 
     return {
       purchase,
-      newCreditBalance: license.current_credits + params.amount,
+      newCreditBalance: (license.current_credits || 0) + params.amount,
       totalCost,
     };
   }
@@ -192,7 +192,7 @@ export class AdvancedLicenseService {
     const license = await prisma.enhancedLicenseKey.findUnique({
       where: { license_key: params.licenseKey },
       include: {
-        client_instance: true,
+        client_instances: true,
       },
     });
 
@@ -215,8 +215,13 @@ export class AdvancedLicenseService {
       throw new ConflictError('Maximum activations reached');
     }
 
+    // Get first client instance for this license
+    const clientInstance = await prisma.clientInstance.findFirst({
+      where: { license_key_id: license.id }
+    });
+    
     // Verify device fingerprint (if provided)
-    if (params.deviceFingerprint && license.client_instance.device_fingerprint !== params.deviceFingerprint) {
+    if (params.deviceFingerprint && clientInstance && clientInstance.device_fingerprint !== params.deviceFingerprint) {
       throw new ConflictError('Device fingerprint mismatch');
     }
 
@@ -225,21 +230,23 @@ export class AdvancedLicenseService {
       where: { id: license.id },
       data: {
         activation_count: license.activation_count + 1,
-        last_activated_at: new Date(),
+        activated_at: new Date(),
         device_fingerprint: params.deviceFingerprint,
         hardware_signature: params.hardwareSignature,
       },
     });
 
     // Update client status
-    await prisma.clientInstance.update({
-      where: { id: license.client_instance_id },
+    if (license.client_instance_id) {
+      await prisma.clientInstance.update({
+        where: { id: license.client_instance_id },
       data: {
         status: 'ACTIVE',
-        last_seen_at: new Date(),
-        last_sync_at: new Date(),
-      },
-    });
+          last_seen_at: new Date(),
+          last_sync_at: new Date(),
+        },
+      });
+    }
 
     logger.info({
       licenseId: license.id,
@@ -249,7 +256,7 @@ export class AdvancedLicenseService {
 
     return {
       license: updatedLicense,
-      client: license.client_instance,
+      client: clientInstance,
       activationStatus: 'SUCCESS',
     };
   }
@@ -269,7 +276,7 @@ export class AdvancedLicenseService {
       include: {
         license_key: true,
         usage_stats: {
-          orderBy: { recorded_at: 'desc' },
+          orderBy: { date: 'desc' },
           take: 10,
         },
       },
@@ -293,8 +300,8 @@ export class AdvancedLicenseService {
     const now = new Date();
     const isExpired = license.expires_at ? license.expires_at < now : false;
     const isActive = license.status === 'ACTIVE' && !isExpired;
-    const creditsRemaining = license.current_credits;
-    const creditsUsed = license.max_credits - license.current_credits;
+    const creditsRemaining = license.current_credits || 0;
+    const creditsUsed = (license.max_credits || 0) - (license.current_credits || 0);
 
     return {
       client,
@@ -302,7 +309,7 @@ export class AdvancedLicenseService {
       status: isActive ? 'ACTIVE' : isExpired ? 'EXPIRED' : 'INACTIVE',
       creditsRemaining,
       creditsUsed,
-      creditsPercentage: (creditsUsed / license.max_credits) * 100,
+      creditsPercentage: license.max_credits ? (creditsUsed / license.max_credits) * 100 : 0,
       isExpired,
       expiresAt: license.expires_at,
       activationCount: license.activation_count,
@@ -340,7 +347,7 @@ export class AdvancedLicenseService {
 
     // Calculate totals
     const totalCreditsPurchased = purchases.reduce((sum, p) => sum + p.credits_purchased, 0);
-    const totalAmountSpent = purchases.reduce((sum, p) => sum + p.total_cost, 0);
+    const totalAmountSpent = purchases.reduce((sum, p) => sum + Number(p.total_cost), 0);
     const lastPurchase = purchases[0];
 
     return {
@@ -363,7 +370,7 @@ export class AdvancedLicenseService {
 
     const licenses = await prisma.enhancedLicenseKey.findMany({
       include: {
-        client_instance: {
+        client_instances: {
           select: {
             id: true,
             client_name: true,
@@ -381,8 +388,8 @@ export class AdvancedLicenseService {
     const totalLicenses = licenses.length;
     const activeLicenses = licenses.filter(l => l.status === 'ACTIVE').length;
     const expiredLicenses = licenses.filter(l => l.expires_at && l.expires_at < new Date()).length;
-    const totalCreditsIssued = licenses.reduce((sum, l) => sum + l.max_credits, 0);
-    const totalCreditsUsed = licenses.reduce((sum, l) => sum + (l.max_credits - l.current_credits), 0);
+    const totalCreditsIssued = licenses.reduce((sum, l) => sum + (l.max_credits || 0), 0);
+    const totalCreditsUsed = licenses.reduce((sum, l) => sum + ((l.max_credits || 0) - (l.current_credits || 0)), 0);
 
     return {
       licenses,
@@ -438,7 +445,7 @@ export class AdvancedLicenseService {
     const license = await prisma.enhancedLicenseKey.findUnique({
       where: { id: licenseId },
       include: {
-        client_instance: true,
+        client_instances: true,
       },
     });
 
@@ -451,22 +458,24 @@ export class AdvancedLicenseService {
       where: { id: licenseId },
       data: {
         status: 'REVOKED',
+        is_revoked: true,
         revoked_at: new Date(),
-        revoked_reason: reason,
-        revoked_by_id: actorId,
+        revocation_reason: reason,
       },
     });
 
     // Update client status
-    await prisma.clientInstance.update({
-      where: { id: license.client_instance_id },
-      data: { status: 'SUSPENDED' },
-    });
+    if (license.client_instance_id) {
+      await prisma.clientInstance.update({
+        where: { id: license.client_instance_id! },
+        data: { status: 'SUSPENDED' },
+      });
+    }
 
     // Create notification
     await prisma.clientNotification.create({
       data: {
-        client_instance_id: license.client_instance_id,
+        client_instance_id: license.client_instance_id!,
         notification_type: 'LICENSE_REVOKED',
         title: 'License Revoked',
         message: `Your license has been revoked. Reason: ${reason}`,

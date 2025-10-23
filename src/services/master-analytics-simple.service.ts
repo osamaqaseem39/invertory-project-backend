@@ -202,7 +202,7 @@ export class MasterAnalyticsSimpleService {
       };
 
     } catch (error) {
-      logger.error('Error getting master dashboard analytics:', error);
+      logger.error({ error }, 'Error getting master dashboard analytics');
       throw error;
     }
   }

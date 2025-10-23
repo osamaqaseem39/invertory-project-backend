@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { UserRole } from '@prisma/client';
 import { AdvancedLicenseService } from '../services/advanced-license.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
-import { validateBody, validateQuery } from '../middleware/validation.middleware';
+import { validateBody } from '../middleware/validation.middleware';
 import { z } from 'zod';
 
 const router = Router();
@@ -243,7 +243,7 @@ router.post(
 router.get(
   '/pricing',
   authenticateToken,
-  async (req: AuthRequest, res, next) => {
+  async (_req: AuthRequest, res, next) => {
     try {
       const pricing = {
         STARTER: { pricePerCredit: 0.10, packName: 'Starter Pack', minCredits: 100 },

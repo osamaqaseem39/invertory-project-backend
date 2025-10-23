@@ -34,7 +34,7 @@ export class DatabaseIsolationService {
 
       logger.info('✅ Database isolation service initialized');
     } catch (error) {
-      logger.error('❌ Failed to initialize database isolation service:', error);
+      logger.error({ error }, '❌ Failed to initialize database isolation service');
       throw error;
     }
   }
@@ -77,7 +77,7 @@ export class DatabaseIsolationService {
       return config;
 
     } catch (error) {
-      logger.error(`❌ Failed to create client database for ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to create client database for ${clientId}`);
       throw error;
     }
   }
@@ -170,7 +170,7 @@ export class DatabaseIsolationService {
 
       logger.info('✅ Client database migrations completed');
     } catch (error) {
-      logger.error('❌ Failed to run client database migrations:', error);
+      logger.error({ error }, '❌ Failed to run client database migrations');
       throw error;
     }
   }
@@ -194,7 +194,7 @@ export class DatabaseIsolationService {
       
       logger.info(`✅ Dropped client database: ${databaseName}`);
     } catch (error) {
-      logger.error(`❌ Failed to drop client database for ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to drop client database for ${clientId}`);
       throw error;
     }
   }
@@ -211,7 +211,7 @@ export class DatabaseIsolationService {
       
       return result.rows.map(row => row.datname);
     } catch (error) {
-      logger.error('❌ Failed to list client databases:', error);
+      logger.error({ error }, '❌ Failed to list client databases');
       throw error;
     }
   }
@@ -234,7 +234,7 @@ export class DatabaseIsolationService {
       
       return result.rows[0] || null;
     } catch (error) {
-      logger.error(`❌ Failed to get client database info for ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to get client database info for ${clientId}`);
       throw error;
     }
   }
@@ -244,12 +244,12 @@ export class DatabaseIsolationService {
    */
   static async backupClientDatabase(clientId: string, backupPath: string): Promise<void> {
     try {
-      const databaseName = `pos_client_${clientId.replace(/-/g, '_')}`;
+      // const databaseName = `pos_client_${clientId.replace(/-/g, '_')}`;
       
       // This would typically use pg_dump in a real implementation
       logger.info(`📦 Backup created for client ${clientId} at ${backupPath}`);
     } catch (error) {
-      logger.error(`❌ Failed to backup client database for ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to backup client database for ${clientId}`);
       throw error;
     }
   }
@@ -262,7 +262,7 @@ export class DatabaseIsolationService {
       // This would typically use pg_restore in a real implementation
       logger.info(`📦 Database restored for client ${clientId} from ${backupPath}`);
     } catch (error) {
-      logger.error(`❌ Failed to restore client database for ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to restore client database for ${clientId}`);
       throw error;
     }
   }
@@ -273,7 +273,7 @@ export class DatabaseIsolationService {
   static async closeAllConnections(): Promise<void> {
     try {
       // Close all client connections
-      for (const [clientId, clientDb] of this.clientDatabases) {
+      for (const [_clientId, clientDb] of this.clientDatabases) {
         await clientDb.$disconnect();
       }
       this.clientDatabases.clear();
@@ -285,7 +285,7 @@ export class DatabaseIsolationService {
 
       logger.info('✅ All database connections closed');
     } catch (error) {
-      logger.error('❌ Failed to close database connections:', error);
+      logger.error({ error }, '❌ Failed to close database connections');
       throw error;
     }
   }

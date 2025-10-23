@@ -1,5 +1,5 @@
 import { UserRole } from '@prisma/client';
-import { NotFoundError, AuthorizationError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
 import { RBACService } from './rbac.service';
 import logger from '../utils/logger';
 import prisma from '../database/client';
@@ -103,7 +103,7 @@ export class BillingAnalyticsService {
     const updatedBilling = await prisma.billingRecord.update({
       where: { id: billingId },
       data: {
-        status: paymentAmount >= billingRecord.amount ? 'PAID' : 'PARTIAL',
+      status: paymentAmount >= Number(billingRecord.amount) ? 'PAID' : 'PARTIAL',
         paid_amount: paymentAmount,
         payment_method: paymentMethod,
         transaction_id: transactionId,
@@ -176,8 +176,8 @@ export class BillingAnalyticsService {
     });
 
     // Calculate summary
-    const totalBilled = billingRecords.reduce((sum, record) => sum + record.amount, 0);
-    const totalPaid = billingRecords.reduce((sum, record) => sum + (record.paid_amount || 0), 0);
+    const totalBilled = billingRecords.reduce((sum, record) => sum + Number(record.amount), 0);
+    const totalPaid = billingRecords.reduce((sum, record) => sum + Number(record.paid_amount || 0), 0);
     const totalOutstanding = totalBilled - totalPaid;
     const overdueRecords = billingRecords.filter(record => 
       record.status !== 'PAID' && 
@@ -192,7 +192,7 @@ export class BillingAnalyticsService {
         totalPaid,
         totalOutstanding,
         overdueCount: overdueRecords.length,
-        overdueAmount: overdueRecords.reduce((sum, record) => sum + record.amount, 0),
+        overdueAmount: overdueRecords.reduce((sum, record) => sum + Number(record.amount), 0),
       },
       billingRecords,
       recentPayments: billingRecords.flatMap(record => record.payment_records).slice(0, 10),
@@ -265,22 +265,22 @@ export class BillingAnalyticsService {
     // Get credit statistics
     const creditPurchases = await prisma.creditPurchase.findMany();
     const totalCreditsSold = creditPurchases.reduce((sum, purchase) => sum + purchase.credits_purchased, 0);
-    const totalRevenue = creditPurchases.reduce((sum, purchase) => sum + purchase.total_cost, 0);
+    const totalRevenue = creditPurchases.reduce((sum, purchase) => sum + Number(purchase.total_cost), 0);
 
     // Calculate billing statistics
-    const totalBilled = billingRecords.reduce((sum, record) => sum + record.amount, 0);
-    const totalPaid = billingRecords.reduce((sum, record) => sum + (record.paid_amount || 0), 0);
+    const totalBilled = billingRecords.reduce((sum, record) => sum + Number(record.amount), 0);
+    const totalPaid = billingRecords.reduce((sum, record) => sum + Number(record.paid_amount || 0), 0);
     const totalOutstanding = totalBilled - totalPaid;
 
     // Get billing by type
     const billingByType = billingRecords.reduce((acc, record) => {
-      acc[record.billing_type] = (acc[record.billing_type] || 0) + record.amount;
+      acc[record.billing_type] = (acc[record.billing_type] || 0) + Number(record.amount);
       return acc;
     }, {} as Record<string, number>);
 
     // Get billing by status
     const billingByStatus = billingRecords.reduce((acc, record) => {
-      acc[record.status] = (acc[record.status] || 0) + record.amount;
+      acc[record.status] = (acc[record.status] || 0) + Number(record.amount);
       return acc;
     }, {} as Record<string, number>);
 
@@ -301,7 +301,7 @@ export class BillingAnalyticsService {
         },
       });
 
-      const monthlyTotal = monthlyPurchases.reduce((sum, purchase) => sum + purchase.total_cost, 0);
+      const monthlyTotal = monthlyPurchases.reduce((sum, purchase) => sum + Number(purchase.total_cost), 0);
       monthlyRevenue.push({
         month: startOfMonth.toISOString().slice(0, 7),
         revenue: monthlyTotal,
@@ -343,7 +343,7 @@ export class BillingAnalyticsService {
     });
 
     const clientsWithRevenue = clients.map(client => {
-      const totalRevenue = client.credit_purchases.reduce((sum, purchase) => sum + purchase.total_cost, 0);
+      const totalRevenue = client.credit_purchases.reduce((sum, purchase) => sum + Number(purchase.total_cost), 0);
       return {
         clientId: client.id,
         clientName: client.client_name,
@@ -401,7 +401,7 @@ export class BillingAnalyticsService {
     return {
       paymentMethods: Object.values(paymentMethods),
       totalPayments: payments.length,
-      totalAmount: payments.reduce((sum, payment) => sum + payment.amount, 0),
+      totalAmount: payments.reduce((sum, payment) => sum + Number(payment.amount), 0),
       recentPayments: payments.slice(0, 20),
     };
   }
@@ -449,7 +449,7 @@ export class BillingAnalyticsService {
       billingType: record.billing_type,
       amount: record.amount,
       paidAmount: record.paid_amount || 0,
-      outstandingAmount: record.amount - (record.paid_amount || 0),
+      outstandingAmount: Number(record.amount) - Number(record.paid_amount || 0),
       status: record.status,
       createdDate: record.created_at,
       dueDate: record.due_date,
@@ -458,8 +458,8 @@ export class BillingAnalyticsService {
 
     const summary = {
       totalRecords: reportData.length,
-      totalBilled: reportData.reduce((sum, record) => sum + record.amount, 0),
-      totalPaid: reportData.reduce((sum, record) => sum + record.paidAmount, 0),
+      totalBilled: reportData.reduce((sum, record) => sum + Number(record.amount), 0),
+      totalPaid: reportData.reduce((sum, record) => sum + Number(record.paidAmount), 0),
       totalOutstanding: reportData.reduce((sum, record) => sum + record.outstandingAmount, 0),
       byStatus: reportData.reduce((acc, record) => {
         acc[record.status] = (acc[record.status] || 0) + 1;

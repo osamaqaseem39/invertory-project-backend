@@ -39,7 +39,9 @@ export class ClientOnboardingService {
   /**
    * Generate device fingerprint
    */
-  private static generateDeviceFingerprint(): string {
+  // @ts-ignore - unused method
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private static _generateDeviceFingerprint(): string {
     // This would typically be generated on the client side
     // For MVP, we'll generate a unique identifier
     return crypto.randomBytes(16).toString('hex');
@@ -93,10 +95,9 @@ export class ClientOnboardingService {
           client_instance_id: clientInstance.id,
           message_type: 'STATUS_UPDATE',
           subject: 'Welcome to POS System',
-          content: `Welcome ${request.clientName}! Your trial account has been created with 50 credits. You can start using the POS system immediately. Contact us when you need more credits or want to upgrade to a full license.`,
+          message_content: `Welcome ${request.clientName}! Your trial account has been created with 50 credits. You can start using the POS system immediately. Contact us when you need more credits or want to upgrade to a full license.`,
           priority: 'MEDIUM',
-          status: 'PENDING',
-          created_by_id: createdBy
+          status: 'PENDING'
         }
       });
 
@@ -108,7 +109,7 @@ export class ClientOnboardingService {
           client_instance_id: clientInstance.id,
           title: 'Account Created Successfully',
           message: 'Your POS system is ready to use! You have 50 trial credits to get started.',
-          type: 'INFO',
+          notification_type: 'INFO',
           is_read: false
         }
       });
@@ -127,7 +128,7 @@ export class ClientOnboardingService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to onboard client:`, error);
+      logger.error({ error }, `❌ Failed to onboard client`);
       throw error;
     }
   }
@@ -183,7 +184,7 @@ export class ClientOnboardingService {
       try {
         trialStatus = await TrialSystemService.getTrialStatus(clientId, clientInfo.device_fingerprint);
       } catch (error) {
-        logger.warn(`Failed to get trial status for client ${clientId}:`, error);
+        logger.warn({ error }, `Failed to get trial status for client ${clientId}`);
       }
 
       // Get license status
@@ -192,7 +193,7 @@ export class ClientOnboardingService {
         try {
           licenseStatus = await LicenseManagementService.getLicenseKeyDetails(clientInfo.license_key?.license_key || '');
         } catch (error) {
-          logger.warn(`Failed to get license status for client ${clientId}:`, error);
+          logger.warn({ error }, `Failed to get license status for client ${clientId}`);
         }
       }
 
@@ -205,7 +206,7 @@ export class ClientOnboardingService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to get onboarding status for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to get onboarding status for client ${clientId}`);
       throw error;
     }
   }
@@ -239,10 +240,9 @@ export class ClientOnboardingService {
           client_instance_id: clientId,
           message_type: 'CREDIT_REQUEST',
           subject: 'License Upgrade Request',
-          content: `License upgrade request to ${licenseType} from ${contactInfo.email}. Message: ${contactInfo.message || 'No additional message'}`,
+          message_content: `License upgrade request to ${licenseType} from ${contactInfo.email}. Message: ${contactInfo.message || 'No additional message'}`,
           priority: 'HIGH',
-          status: 'PENDING',
-          created_by_id: processedBy
+          status: 'PENDING'
         }
       });
 
@@ -261,7 +261,7 @@ export class ClientOnboardingService {
           client_instance_id: clientId,
           title: 'License Upgrade Request Processed',
           message: `Your license upgrade request has been processed. License key: ${licenseKey.licenseKey}`,
-          type: 'SUCCESS',
+          notification_type: 'SUCCESS',
           is_read: false
         }
       });
@@ -275,7 +275,7 @@ export class ClientOnboardingService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to process license upgrade request:`, error);
+      logger.error({ error }, `❌ Failed to process license upgrade request`);
       throw error;
     }
   }
@@ -345,7 +345,7 @@ export class ClientOnboardingService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to get client dashboard data:`, error);
+      logger.error({ error }, `❌ Failed to get client dashboard data`);
       throw error;
     }
   }
@@ -374,10 +374,9 @@ export class ClientOnboardingService {
           client_instance_id: clientId,
           message_type: 'STATUS_UPDATE',
           subject: 'Account Deactivated',
-          content: `Your account has been deactivated. Reason: ${reason}`,
+          message_content: `Your account has been deactivated. Reason: ${reason}`,
           priority: 'HIGH',
-          status: 'PENDING',
-          created_by_id: deactivatedBy
+          status: 'PENDING'
         }
       });
 
@@ -387,7 +386,7 @@ export class ClientOnboardingService {
           client_instance_id: clientId,
           title: 'Account Deactivated',
           message: `Your account has been deactivated. Reason: ${reason}`,
-          type: 'WARNING',
+          notification_type: 'WARNING',
           is_read: false
         }
       });
@@ -400,7 +399,7 @@ export class ClientOnboardingService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to deactivate client:`, error);
+      logger.error({ error }, `❌ Failed to deactivate client`);
       throw error;
     }
   }
@@ -428,10 +427,9 @@ export class ClientOnboardingService {
           client_instance_id: clientId,
           message_type: 'STATUS_UPDATE',
           subject: 'Account Reactivated',
-          content: 'Your account has been reactivated. You can now use the POS system again.',
+          message_content: 'Your account has been reactivated. You can now use the POS system again.',
           priority: 'MEDIUM',
-          status: 'PENDING',
-          created_by_id: reactivatedBy
+          status: 'PENDING'
         }
       });
 
@@ -441,7 +439,7 @@ export class ClientOnboardingService {
           client_instance_id: clientId,
           title: 'Account Reactivated',
           message: 'Your account has been reactivated. Welcome back!',
-          type: 'SUCCESS',
+          notification_type: 'SUCCESS',
           is_read: false
         }
       });
@@ -454,7 +452,7 @@ export class ClientOnboardingService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to reactivate client:`, error);
+      logger.error({ error }, `❌ Failed to reactivate client`);
       throw error;
     }
   }
@@ -519,7 +517,7 @@ export class ClientOnboardingService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to get onboarding statistics:`, error);
+      logger.error({ error }, `❌ Failed to get onboarding statistics`);
       throw error;
     }
   }

@@ -4,6 +4,7 @@ import { BillingAnalyticsService } from '../services/billing-analytics.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 import { validateBody, validateQuery } from '../middleware/validation.middleware';
 import { z } from 'zod';
+import prisma from '../database/client';
 
 const router = Router();
 
@@ -230,7 +231,7 @@ router.get(
   '/revenue-trends',
   authenticateToken,
   requireMasterAdmin,
-  async (req: AuthRequest, res, next) => {
+  async (_req: AuthRequest, res, next) => {
     try {
       // Get last 12 months of data
       const trends = [];
@@ -258,8 +259,8 @@ router.get(
           },
         });
 
-        const monthlyRevenue = monthlyPurchases.reduce((sum, purchase) => sum + purchase.total_cost, 0);
-        const monthlyCredits = monthlyPurchases.reduce((sum, purchase) => sum + purchase.credits_purchased, 0);
+        const monthlyRevenue = monthlyPurchases.reduce((sum: number, purchase: any) => sum + Number(purchase.total_cost), 0);
+        const monthlyCredits = monthlyPurchases.reduce((sum: number, purchase: any) => sum + purchase.credits_purchased, 0);
 
         trends.push({
           month: startOfMonth.toISOString().slice(0, 7),
@@ -267,9 +268,9 @@ router.get(
           credits: monthlyCredits,
           purchases: monthlyPurchases.length,
           topClients: monthlyPurchases
-            .sort((a, b) => b.total_cost - a.total_cost)
+            .sort((a: any, b: any) => Number(b.total_cost) - Number(a.total_cost))
             .slice(0, 3)
-            .map(p => ({
+            .map((p: any) => ({
               clientName: p.client_instance.client_name,
               amount: p.total_cost,
             })),

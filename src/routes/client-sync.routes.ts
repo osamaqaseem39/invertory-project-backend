@@ -2,10 +2,9 @@ import { Router } from 'express';
 import { UserRole } from '@prisma/client';
 import { ClientSyncService } from '../services/client-sync.service';
 import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
-import { validateBody, validateQuery } from '../middleware/validation.middleware';
+import { validateBody } from '../middleware/validation.middleware';
 import {
   createMessageSchema,
-  messageQueryFiltersSchema,
 } from '../validators/client-management.validator';
 
 const router = Router();
@@ -25,17 +24,17 @@ const requireMasterAdmin = (req: AuthRequest, res: any, next: any) => {
 
 // Custom schemas for sync operations
 const syncMessageSchema = createMessageSchema; // Reuse the same schema
-const syncStatusSchema = {
-  body: {
-    status: { type: 'string', required: true },
-    device_info: { type: 'object', required: false },
-  }
-};
-const heartbeatSchema = {
-  body: {
-    device_info: { type: 'object', required: false },
-  }
-};
+// const syncStatusSchema = {
+//   body: {
+//     status: { type: 'string', required: true },
+//     device_info: { type: 'object', required: false },
+//   }
+// };
+// const heartbeatSchema = {
+//   body: {
+//     device_info: { type: 'object', required: false },
+//   }
+// };
 
 /**
  * POST /api/v1/client-sync/message

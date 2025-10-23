@@ -1,7 +1,7 @@
 import prisma from '../database/client';
 import { DatabaseIsolationService } from './database-isolation.service';
 import logger from '../utils/logger';
-import crypto from 'crypto';
+// import crypto from 'crypto';
 
 interface LicenseKey {
   id: string;
@@ -97,7 +97,7 @@ export class LicenseManagementService {
       const license = await prisma.enhancedLicenseKey.create({
         data: {
           license_key: licenseKey,
-          license_type: licenseType,
+          license_type: licenseType as any,
           status: 'PENDING',
           device_fingerprint: deviceFingerprint,
           customer_email: contactEmail,
@@ -111,7 +111,7 @@ export class LicenseManagementService {
       });
 
       // Create license record in master admin system
-      const licenseRecord = await prisma.clientInstance.update({
+      await prisma.clientInstance.update({
         where: { id: clientId },
         data: {
           license_key_id: license.id,
@@ -136,7 +136,7 @@ export class LicenseManagementService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to create license key for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to create license key for client ${clientId}`);
       throw error;
     }
   }
@@ -212,11 +212,11 @@ export class LicenseManagementService {
       return {
         success: true,
         message: 'License activated successfully',
-        credits: license.max_credits
+        credits: license.max_credits || undefined
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to activate license key ${licenseKey}:`, error);
+      logger.error({ error }, `❌ Failed to activate license key ${licenseKey}`);
       throw error;
     }
   }
@@ -252,14 +252,14 @@ export class LicenseManagementService {
         durationMonths: license.expires_at ? 
           Math.ceil((license.expires_at.getTime() - license.created_at.getTime()) / (1000 * 60 * 60 * 24 * 30)) : 0,
         isUsed: license.activation_count > 0,
-        usedAt: license.activated_at,
+        usedAt: license.activated_at || undefined,
         expiresAt: license.expires_at || new Date(),
         createdAt: license.created_at,
         createdBy: license.created_by?.username || 'Unknown'
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to get license key details for ${licenseKey}:`, error);
+      logger.error({ error }, `❌ Failed to get license key details for ${licenseKey}`);
       throw error;
     }
   }
@@ -303,7 +303,7 @@ export class LicenseManagementService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to revoke license key ${licenseKey}:`, error);
+      logger.error({ error }, `❌ Failed to revoke license key ${licenseKey}`);
       throw error;
     }
   }
@@ -336,7 +336,7 @@ export class LicenseManagementService {
 
       // Calculate revenue (simplified for MVP)
       const totalRevenue = 0; // This would calculate from billing records
-      const monthlyRevenue = []; // This would calculate monthly revenue
+      const monthlyRevenue: any[] = []; // This would calculate monthly revenue
 
       return {
         totalLicenses,
@@ -348,7 +348,7 @@ export class LicenseManagementService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to get license statistics:`, error);
+      logger.error({ error }, `❌ Failed to get license statistics`);
       throw error;
     }
   }
@@ -362,15 +362,14 @@ export class LicenseManagementService {
   ): Promise<{ success: boolean; message: string; licenseKey?: string }> {
     try {
       // Create activation request record
-      const activationRequest = await prisma.clientMessage.create({
+      await prisma.clientMessage.create({
         data: {
           client_instance_id: request.clientId,
           message_type: 'CREDIT_REQUEST',
           subject: 'License Activation Request',
-          content: `License activation request from ${request.contactEmail}. ${request.message || ''}`,
+          message_content: `License activation request from ${request.contactEmail}. ${request.message || ''}`,
           priority: 'HIGH',
           status: 'PENDING',
-          created_by_id: processedBy
         }
       });
 
@@ -392,7 +391,7 @@ export class LicenseManagementService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to process license activation request:`, error);
+      logger.error({ error }, `❌ Failed to process license activation request`);
       throw error;
     }
   }
@@ -456,12 +455,12 @@ export class LicenseManagementService {
         isValid: true,
         status: license.status,
         message: 'License key is valid',
-        expiresAt: license.expires_at,
-        creditsRemaining: license.current_credits
+        expiresAt: license.expires_at || undefined,
+        creditsRemaining: license.current_credits || undefined
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to check license key status:`, error);
+      logger.error({ error }, `❌ Failed to check license key status`);
       throw error;
     }
   }

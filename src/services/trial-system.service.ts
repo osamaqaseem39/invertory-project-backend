@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+// import { PrismaClient } from '@prisma/client';
 import { DatabaseIsolationService } from './database-isolation.service';
 import logger from '../utils/logger';
 
@@ -86,7 +86,7 @@ export class TrialSystemService {
       return newSession[0];
 
     } catch (error) {
-      logger.error(`❌ Failed to initialize trial session for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to initialize trial session for client ${clientId}`);
       throw error;
     }
   }
@@ -121,7 +121,7 @@ export class TrialSystemService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to check credits for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to check credits for client ${clientId}`);
       throw error;
     }
   }
@@ -201,7 +201,7 @@ export class TrialSystemService {
       return result;
 
     } catch (error) {
-      logger.error(`❌ Failed to consume credits for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to consume credits for client ${clientId}`);
       throw error;
     }
   }
@@ -224,7 +224,7 @@ export class TrialSystemService {
       return session.length > 0 ? session[0] : null;
 
     } catch (error) {
-      logger.error(`❌ Failed to get trial status for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to get trial status for client ${clientId}`);
       throw error;
     }
   }
@@ -255,7 +255,7 @@ export class TrialSystemService {
       return transactions;
 
     } catch (error) {
-      logger.error(`❌ Failed to get credit history for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to get credit history for client ${clientId}`);
       throw error;
     }
   }
@@ -299,7 +299,7 @@ export class TrialSystemService {
       };
 
     } catch (error) {
-      logger.error(`❌ Failed to activate license for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to activate license for client ${clientId}`);
       throw error;
     }
   }
@@ -307,7 +307,7 @@ export class TrialSystemService {
   /**
    * Verify license key
    */
-  private static async verifyLicenseKey(licenseKey: string, deviceFingerprint: string): Promise<boolean> {
+  private static async verifyLicenseKey(licenseKey: string, _deviceFingerprint: string): Promise<boolean> {
     try {
       // This would typically check with the master admin system
       // For now, we'll implement a simple verification
@@ -323,7 +323,7 @@ export class TrialSystemService {
       return true; // For MVP, assume valid
       
     } catch (error) {
-      logger.error(`❌ Failed to verify license key:`, error);
+      logger.error({ error }, `❌ Failed to verify license key`);
       return false;
     }
   }
@@ -352,7 +352,7 @@ export class TrialSystemService {
       logger.info(`✅ Trial session reset for client ${clientId}`);
       
     } catch (error) {
-      logger.error(`❌ Failed to reset trial session for client ${clientId}:`, error);
+      logger.error({ error }, `❌ Failed to reset trial session for client ${clientId}`);
       throw error;
     }
   }
@@ -378,7 +378,7 @@ export class TrialSystemService {
       };
       
     } catch (error) {
-      logger.error(`❌ Failed to get trial statistics:`, error);
+      logger.error({ error }, `❌ Failed to get trial statistics`);
       throw error;
     }
   }

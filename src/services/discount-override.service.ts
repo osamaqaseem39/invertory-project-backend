@@ -36,6 +36,11 @@ interface ApproveOverrideParams {
 // ===== CONSTANTS =====
 
 const DEFAULT_DISCOUNT_CAPS: Record<UserRole, DiscountCaps> = {
+  master_admin: {
+    max_line_discount: 100,
+    max_cart_discount: 100,
+    can_override: true,
+  },
   owner_ultimate_super_admin: {
     max_line_discount: 100,
     max_cart_discount: 100,

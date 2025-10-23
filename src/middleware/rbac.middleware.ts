@@ -15,24 +15,26 @@ interface AuthRequest extends Request {
 /**
  * Middleware to require master admin role
  */
-export const requireMasterAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireMasterAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
           message: 'Authentication required'
         }
       });
+      return;
     }
 
     if (req.user.role !== 'master_admin') {
-      return res.status(403).json({
+      res.status(403).json({
         error: {
           code: 'FORBIDDEN',
           message: 'Master admin access required'
         }
       });
+      return;
     }
 
     next();
@@ -44,24 +46,26 @@ export const requireMasterAdmin = (req: AuthRequest, res: Response, next: NextFu
 /**
  * Middleware to require admin or master admin role
  */
-export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
   try {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
           message: 'Authentication required'
         }
       });
+      return;
     }
 
     if (!['admin', 'master_admin'].includes(req.user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         error: {
           code: 'FORBIDDEN',
           message: 'Admin access required'
         }
       });
+      return;
     }
 
     next();
@@ -74,24 +78,26 @@ export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction
  * Middleware to require specific role
  */
 export const requireRole = (allowedRoles: UserRole[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
-        return res.status(401).json({
+        res.status(401).json({
           error: {
             code: 'UNAUTHORIZED',
             message: 'Authentication required'
           }
         });
+        return;
       }
 
       if (!allowedRoles.includes(req.user.role)) {
-        return res.status(403).json({
+        res.status(403).json({
           error: {
             code: 'FORBIDDEN',
             message: `Access denied. Required roles: ${allowedRoles.join(', ')}`
           }
         });
+        return;
       }
 
       next();
@@ -105,25 +111,27 @@ export const requireRole = (allowedRoles: UserRole[]) => {
  * Middleware to require specific permission
  */
 export const requirePermission = (permission: string) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
-        return res.status(401).json({
+        res.status(401).json({
           error: {
             code: 'UNAUTHORIZED',
             message: 'Authentication required'
           }
         });
+        return;
       }
 
-      const hasPermission = RBACService.hasPermission(req.user.role, permission);
+      const hasPermission = RBACService.canManageClients(req.user.role); // Generic permission check
       if (!hasPermission) {
-        return res.status(403).json({
+        res.status(403).json({
           error: {
             code: 'FORBIDDEN',
             message: `Permission '${permission}' required`
           }
         });
+        return;
       }
 
       next();

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authenticateToken, AuthRequest } from '../middleware/auth.middleware';
 import { requireMasterAdmin } from '../middleware/rbac.middleware';
 import { validateBody } from '../middleware/validation.middleware';
 import { z } from 'zod';
@@ -7,7 +7,7 @@ import { DatabaseIsolationService } from '../services/database-isolation.service
 import { TrialSystemService } from '../services/trial-system.service';
 import { LicenseManagementService } from '../services/license-management.service';
 import { ClientOnboardingService } from '../services/client-onboarding.service';
-import logger from '../utils/logger';
+// import logger from '../utils/logger';
 
 const router = Router();
 
@@ -52,7 +52,7 @@ router.post(
   authenticateToken,
   requireMasterAdmin,
   validateBody(clientOnboardingSchema),
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next) => {
     try {
       const result = await ClientOnboardingService.onboardClient(
         req.body,
@@ -136,18 +136,19 @@ router.post(
   authenticateToken,
   requireMasterAdmin,
   validateBody(creditConsumptionSchema),
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next): Promise<void> => {
     try {
       const { operation_type, device_fingerprint } = req.body;
       const client_id = req.query.client_id as string;
 
       if (!client_id) {
-        return res.status(400).json({
+        res.status(400).json({
           error: {
             code: 'MISSING_CLIENT_ID',
             message: 'Client ID is required'
           }
         });
+        return;
       }
 
       const result = await TrialSystemService.checkCredits(
@@ -176,18 +177,19 @@ router.post(
   authenticateToken,
   requireMasterAdmin,
   validateBody(creditConsumptionSchema),
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next): Promise<void> => {
     try {
       const { operation_type, device_fingerprint } = req.body;
       const client_id = req.query.client_id as string;
 
       if (!client_id) {
-        return res.status(400).json({
+        res.status(400).json({
           error: {
             code: 'MISSING_CLIENT_ID',
             message: 'Client ID is required'
           }
         });
+        return;
       }
 
       const result = await TrialSystemService.consumeCredits(
@@ -215,18 +217,19 @@ router.get(
   '/trial-status/:clientId',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next): Promise<void> => {
     try {
       const { clientId } = req.params;
       const { device_fingerprint } = req.query;
 
       if (!device_fingerprint) {
-        return res.status(400).json({
+        res.status(400).json({
           error: {
             code: 'MISSING_DEVICE_FINGERPRINT',
             message: 'Device fingerprint is required'
           }
         });
+        return;
       }
 
       const trialStatus = await TrialSystemService.getTrialStatus(
@@ -253,18 +256,19 @@ router.get(
   '/credit-history/:clientId',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next): Promise<void> => {
     try {
       const { clientId } = req.params;
       const { device_fingerprint, limit } = req.query;
 
       if (!device_fingerprint) {
-        return res.status(400).json({
+        res.status(400).json({
           error: {
             code: 'MISSING_DEVICE_FINGERPRINT',
             message: 'Device fingerprint is required'
           }
         });
+        return;
       }
 
       const creditHistory = await TrialSystemService.getCreditHistory(
@@ -302,7 +306,7 @@ router.post(
     custom_credits: z.number().optional(),
     custom_duration: z.number().optional(),
   })),
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next) => {
     try {
       const {
         client_id,
@@ -343,18 +347,19 @@ router.post(
   authenticateToken,
   requireMasterAdmin,
   validateBody(licenseActivationSchema),
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next): Promise<void> => {
     try {
       const { license_key, device_fingerprint } = req.body;
       const client_id = req.query.client_id as string;
 
       if (!client_id) {
-        return res.status(400).json({
+        res.status(400).json({
           error: {
             code: 'MISSING_CLIENT_ID',
             message: 'Client ID is required'
           }
         });
+        return;
       }
 
       const result = await LicenseManagementService.activateLicenseKey(
@@ -382,18 +387,19 @@ router.get(
   '/license-details/:licenseKey',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next): Promise<void> => {
     try {
       const { licenseKey } = req.params;
       const licenseDetails = await LicenseManagementService.getLicenseKeyDetails(licenseKey);
 
       if (!licenseDetails) {
-        return res.status(404).json({
+        res.status(404).json({
           error: {
             code: 'LICENSE_NOT_FOUND',
             message: 'License key not found'
           }
         });
+        return;
       }
 
       res.status(200).json({
@@ -411,7 +417,7 @@ router.get(
  * @desc Get license pricing information
  * @access Public
  */
-router.get('/license-pricing', async (req, res, next) => {
+router.get('/license-pricing', async (_req, res, next) => {
   try {
     const pricing = LicenseManagementService.getLicensePricing();
 
@@ -437,7 +443,7 @@ router.post(
     client_id: z.string().uuid(),
     ...licenseUpgradeSchema.shape
   })),
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next) => {
     try {
       const { client_id, license_type, contact_email, contact_phone, message } = req.body;
 
@@ -469,7 +475,7 @@ router.get(
   '/client-databases',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (_req, res, next) => {
     try {
       const databases = await DatabaseIsolationService.listClientDatabases();
 
@@ -492,7 +498,7 @@ router.get(
   '/database-info/:clientId',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (req: AuthRequest, res, next) => {
     try {
       const { clientId } = req.params;
       const dbInfo = await DatabaseIsolationService.getClientDatabaseInfo(clientId);
@@ -565,7 +571,7 @@ router.get(
   '/onboarding-statistics',
   authenticateToken,
   requireMasterAdmin,
-  async (req, res, next) => {
+  async (_req, res, next) => {
     try {
       const statistics = await ClientOnboardingService.getOnboardingStatistics();
 
@@ -601,7 +607,7 @@ router.post(
       const result = await ClientOnboardingService.deactivateClient(
         clientId,
         reason,
-        req.user!.id
+        (req as AuthRequest).user!.id
       );
 
       res.status(200).json({
@@ -629,7 +635,7 @@ router.post(
 
       const result = await ClientOnboardingService.reactivateClient(
         clientId,
-        req.user!.id
+        (req as AuthRequest).user!.id
       );
 
       res.status(200).json({

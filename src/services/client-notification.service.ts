@@ -1,5 +1,5 @@
 import { UserRole } from '@prisma/client';
-import { NotFoundError, AuthorizationError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
 import { RBACService } from './rbac.service';
 import logger from '../utils/logger';
 import prisma from '../database/client';
