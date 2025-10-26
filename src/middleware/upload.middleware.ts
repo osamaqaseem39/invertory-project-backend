@@ -126,7 +126,7 @@ export const uploadProductImage = createMulterInstance(
   {
     fileSize: 5 * 1024 * 1024, // 5MB for product images
   },
-  (_req, file, cb) => {
+  (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     
     if (allowedMimeTypes.includes(file.mimetype)) {
