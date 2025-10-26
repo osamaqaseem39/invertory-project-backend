@@ -14,7 +14,9 @@ async function seed() {
     const existingUserCount = await prisma.user.count();
     if (existingUserCount > 0) {
       logger.warn(`⚠️  Database already has ${existingUserCount} users. Skipping seed.`);
-      logger.info('To reset and re-seed, run: npm run db:reset');
+      if (process.env.NODE_ENV !== 'production') {
+        logger.info('To reset and re-seed, run: npm run db:reset');
+      }
       return;
     }
 
@@ -112,12 +114,19 @@ async function seed() {
     logger.info('🎉 Database seeded successfully!');
     logger.info('═══════════════════════════════════════════════════════════');
     logger.info('');
-    logger.info('Demo Users:');
-    logger.info('');
-    logger.info('1. Master Admin');
-    logger.info('   Username: master_admin');
-    logger.info('   Password: MasterAdmin@123456');
-    logger.info('   Can: Manage all client instances, view cross-tenant data');
+    
+    if (process.env.NODE_ENV === 'production') {
+      logger.info('Production deployment - Default users created:');
+      logger.info('• owner (Owner@123456) - Full system access');
+      logger.info('• admin (Admin@123456) - Administrative access');
+      logger.info('• master_admin (MasterAdmin@123456) - Master admin access');
+    } else {
+      logger.info('Demo Users:');
+      logger.info('');
+      logger.info('1. Master Admin');
+      logger.info('   Username: master_admin');
+      logger.info('   Password: MasterAdmin@123456');
+      logger.info('   Can: Manage all client instances, view cross-tenant data');
     logger.info('');
     logger.info('2. Owner (Ultimate Super Admin)');
     logger.info('   Username: owner');
@@ -144,6 +153,7 @@ async function seed() {
     logger.info('   Password: Guest@123456');
     logger.info('   Can: View-only (own profile and public info)');
     logger.info('');
+    }
 
     // ===== SEED CUSTOMERS FOR POS SYSTEM =====
     logger.info('🛒 Seeding customers for POS...');

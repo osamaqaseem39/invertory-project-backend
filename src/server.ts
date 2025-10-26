@@ -42,6 +42,11 @@ const app = express();
 
 // ===== MIDDLEWARE =====
 
+// Trust proxy for serverless environments (Vercel, AWS Lambda, etc.)
+if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', true);
+}
+
 // Security
 app.use(helmet());
 
