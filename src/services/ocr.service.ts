@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import Tesseract from 'tesseract.js';
 import fs from 'fs/promises';
-import * as pdfParse from 'pdf-parse';
 import sharp from 'sharp';
 
 const prisma = new PrismaClient();
@@ -157,12 +156,33 @@ export class OCRService {
   }
 
   /**
-   * Extract text from PDF
+   * Extract text from PDF using pdfjs-dist
    */
   private static async extractTextFromPDF(filePath: string): Promise<{ text: string }> {
     const dataBuffer = await fs.readFile(filePath);
-    const data = await (pdfParse as any).default(dataBuffer);
-    return { text: data.text };
+    
+    // Use dynamic import to load pdfjs-dist legacy build
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    
+    // Convert Buffer to Uint8Array for pdfjs-dist compatibility
+    const uint8Array = new Uint8Array(dataBuffer);
+    
+    // Load the PDF document
+    const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+    
+    let fullText = '';
+    
+    // Extract text from all pages
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    return { text: fullText.trim() };
   }
 
   /**
