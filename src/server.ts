@@ -44,22 +44,66 @@ const app = express();
 
 // Security
 app.use(helmet());
-app.use(cors({
-  origin: config.env === 'development' 
-    ? '*' 
+
+// CORS configuration with debugging
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = config.env === 'development' 
+      ? ['*'] 
+      : [
+          'http://localhost:3000', 
+          'http://localhost:5173',
+          'https://ums.plivix-tech.com',
+          'https://invertory-project-frontend.vercel.app',
+          process.env.CORS_ORIGIN
+        ].filter(Boolean); // Remove undefined values
+    
+    if (config.env === 'development' || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS: Blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+
+console.log('CORS Configuration:', {
+  env: config.env,
+  corsOrigin: process.env.CORS_ORIGIN
+});
+
+app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  // Check if origin is allowed using the same logic as CORS middleware
+  const allowedOrigins = config.env === 'development' 
+    ? ['*'] 
     : [
         'http://localhost:3000', 
         'http://localhost:5173',
         'https://ums.plivix-tech.com',
         'https://invertory-project-frontend.vercel.app',
-        process.env.CORS_ORIGIN!
-      ],
-  credentials: true,
-}));
-
-// Handle preflight OPTIONS requests explicitly
-app.options('*', (_req, res) => {
-  res.header('Access-Control-Allow-Origin', 'https://invertory-project-frontend.vercel.app');
+        process.env.CORS_ORIGIN
+      ].filter(Boolean);
+  
+  if (config.env === 'development' || allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin))) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  } else {
+    // Fallback to first allowed origin if origin doesn't match
+    const fallbackOrigin = allowedOrigins[0] || '*';
+    res.header('Access-Control-Allow-Origin', fallbackOrigin);
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.header('Access-Control-Allow-Credentials', 'true');
@@ -94,6 +138,17 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     version: config.apiVersion,
     environment: config.env,
+  });
+});
+
+// CORS test endpoint
+app.get('/cors-test', (_req, res) => {
+  res.json({ 
+    message: 'CORS is working!',
+    timestamp: new Date().toISOString(),
+    environment: config.env,
+    allowedOrigins: corsOptions.origin,
+    requestOrigin: _req.headers.origin
   });
 });
 
