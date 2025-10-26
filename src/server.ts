@@ -51,6 +51,7 @@ app.use(cors({
         'http://localhost:3000', 
         'http://localhost:5173',
         'https://ums.plivix-tech.com',
+        'https://invertory-project-frontend.vercel.app',
         process.env.CORS_ORIGIN!
       ],
   credentials: true,
