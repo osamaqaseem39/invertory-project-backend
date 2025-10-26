@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Production-ready User Management System with RBAC",
   "main": "dist/server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "dev:server": "tsx watch src/server.ts",
@@ -10,6 +13,7 @@
     "stop": "bash scripts/stop-server.sh",
     "build": "tsc",
     "start": "node dist/server.js",
+    "vercel-build": "npm run build && npm run db:migrate:prod",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "npx prisma migrate deploy",
     "db:seed": "tsx src/seed.ts",
