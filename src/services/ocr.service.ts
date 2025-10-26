@@ -41,11 +41,15 @@ export class OCRService {
   static async uploadDocument(params: OCRUploadParams) {
     const { file, sourceType, uploadedById, sourceReference } = params;
 
+    // Handle both disk and memory storage
+    const filePath = file.path || (file.buffer ? 'memory://' + file.filename : 'unknown');
+    const fileBuffer = file.buffer;
+
     // Create scan record
     const scan = await prisma.oCRScan.create({
       data: {
         file_name: file.filename,
-        file_path: file.path,
+        file_path: filePath,
         file_type: file.mimetype,
         file_size: file.size,
         source_type: sourceType,
@@ -55,6 +59,11 @@ export class OCRService {
         products_count: 0,
       },
     });
+
+    // Store buffer in memory if using memory storage
+    if (fileBuffer) {
+      (scan as any).fileBuffer = fileBuffer;
+    }
 
     return scan;
   }
@@ -84,14 +93,22 @@ export class OCRService {
       let rawText: string;
       let confidence: number;
 
+      // Check if we have a buffer (memory storage) or need to read from disk
+      const scanWithBuffer = scan as any;
+      const fileBuffer = scanWithBuffer.fileBuffer;
+
       if (scan.file_type.includes('pdf')) {
         // Extract from PDF
-        const result = await this.extractTextFromPDF(scan.file_path);
+        const result = fileBuffer 
+          ? await this.extractTextFromPDFBuffer(fileBuffer)
+          : await this.extractTextFromPDF(scan.file_path);
         rawText = result.text;
         confidence = 85; // PDF text extraction is generally reliable
       } else {
         // Extract from image using OCR
-        const result = await this.extractTextFromImage(scan.file_path);
+        const result = fileBuffer 
+          ? await this.extractTextFromImageBuffer(fileBuffer)
+          : await this.extractTextFromImage(scan.file_path);
         rawText = result.text;
         confidence = result.confidence;
       }
@@ -209,6 +226,61 @@ export class OCRService {
 
     // Clean up optimized file
     await fs.unlink(optimizedPath).catch(() => {});
+
+    return {
+      text: result.data.text,
+      confidence: result.data.confidence,
+    };
+  }
+
+  /**
+   * Extract text from PDF buffer (for memory storage)
+   */
+  private static async extractTextFromPDFBuffer(buffer: Buffer): Promise<{ text: string }> {
+    // Use dynamic import to load pdfjs-dist legacy build
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    
+    // Convert Buffer to Uint8Array for pdfjs-dist compatibility
+    const uint8Array = new Uint8Array(buffer);
+    
+    // Load the PDF document
+    const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+    
+    let fullText = '';
+    
+    // Extract text from all pages
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    return { text: fullText.trim() };
+  }
+
+  /**
+   * Extract text from image buffer using Tesseract OCR (for memory storage)
+   */
+  private static async extractTextFromImageBuffer(buffer: Buffer): Promise<{ text: string; confidence: number }> {
+    // Optimize image for OCR using buffer
+    const optimizedBuffer = await sharp(buffer)
+      .grayscale()
+      .normalize()
+      .sharpen()
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    // Perform OCR on buffer
+    const result = await Tesseract.recognize(optimizedBuffer, 'eng', {
+      logger: (m) => {
+        if (m.status === 'recognizing text') {
+          console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+        }
+      },
+    });
 
     return {
       text: result.data.text,

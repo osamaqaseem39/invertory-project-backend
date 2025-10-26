@@ -171,13 +171,36 @@ export class BrandingService {
    * Upload and process logo
    */
   static async uploadLogo(profileId: string, file: Express.Multer.File) {
-    const uploadDir = path.join(process.cwd(), 'uploads', 'branding', profileId);
-    
-    // Create directory if not exists
-    await fs.mkdir(uploadDir, { recursive: true });
+    // Handle both disk and memory storage
+    const filePath = file.path;
+    const fileBuffer = file.buffer;
 
-    // Process logo into multiple sizes
-    const logos = await this.processLogoSizes(file.path, uploadDir);
+    let logos: any;
+
+    if (fileBuffer) {
+      // Process from memory buffer
+      logos = await this.processLogoSizesFromBuffer(fileBuffer);
+    } else if (filePath) {
+      // Process from disk file
+      const uploadDir = path.join(process.cwd(), 'uploads', 'branding', profileId);
+      
+      // Create directory if not exists
+      try {
+        await fs.mkdir(uploadDir, { recursive: true });
+      } catch (error) {
+        console.warn('Could not create upload directory, using memory processing:', error);
+        logos = await this.processLogoSizesFromBuffer(await fs.readFile(filePath));
+      }
+
+      if (!logos) {
+        logos = await this.processLogoSizes(filePath, uploadDir);
+      }
+
+      // Delete temporary uploaded file
+      await fs.unlink(filePath).catch(() => {});
+    } else {
+      throw new Error('No file data available');
+    }
 
     // Update profile with logo paths
     const profile = await prisma.brandingProfile.update({
@@ -194,9 +217,6 @@ export class BrandingService {
         favicon_16: logos.favicon16,
       },
     });
-
-    // Delete temporary uploaded file
-    await fs.unlink(file.path).catch(() => {});
 
     return profile;
   }
@@ -238,6 +258,52 @@ export class BrandingService {
 
     // Generate base64 for receipts (200x80)
     const base64Buffer = await sharp(sourcePath)
+      .resize(200, 80, {
+        fit: 'contain',
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+      })
+      .png()
+      .toBuffer();
+
+    paths.base64 = `data:image/png;base64,${base64Buffer.toString('base64')}`;
+
+    return paths;
+  }
+
+  /**
+   * Process logo into multiple sizes from buffer (for memory storage)
+   */
+  private static async processLogoSizesFromBuffer(buffer: Buffer) {
+    const sizes = [
+      { name: 'original', width: null, height: null },
+      { name: 'header', width: 180, height: 60 },
+      { name: 'receipt', width: 200, height: 80 },
+      { name: 'pdf', width: 300, height: 100 },
+      { name: 'email', width: 400, height: 150 },
+      { name: 'thumbnail', width: 64, height: 64 },
+      { name: 'favicon32', width: 32, height: 32 },
+      { name: 'favicon16', width: 16, height: 16 },
+    ];
+
+    const paths: any = {};
+
+    for (const size of sizes) {
+      let processor = sharp(buffer);
+
+      if (size.width && size.height) {
+        processor = processor.resize(size.width, size.height, {
+          fit: 'contain',
+          background: { r: 255, g: 255, b: 255, alpha: 0 },
+        });
+      }
+
+      const processedBuffer = await processor.png().toBuffer();
+      const base64 = `data:image/png;base64,${processedBuffer.toString('base64')}`;
+      paths[size.name] = base64;
+    }
+
+    // Generate base64 for receipts (200x80)
+    const base64Buffer = await sharp(buffer)
       .resize(200, 80, {
         fit: 'contain',
         background: { r: 255, g: 255, b: 255, alpha: 0 },
