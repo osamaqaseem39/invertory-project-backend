@@ -2,9 +2,11 @@ import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { authAPI } from '../api/auth';
+import { useTranslation } from '../i18n/i18nContext';
 
 export const ChangePasswordPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -74,8 +76,8 @@ export const ChangePasswordPage = () => {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="glass rounded-3xl p-6 shadow-xl animate-slide-down">
-          <h1 className="text-3xl font-bold gradient-text mb-2">Change Password</h1>
-          <p className="text-slate-600 text-sm">Update your account password</p>
+          <h1 className="text-3xl font-bold gradient-text mb-2">{t.nav.changePassword}</h1>
+          <p className="text-slate-600 text-sm">{t.auth.password}</p>
         </div>
 
         {/* Form */}
@@ -84,7 +86,7 @@ export const ChangePasswordPage = () => {
             {/* Current Password */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Current Password *
+                {t.auth.currentPassword} *
               </label>
               <input
                 type="password"
@@ -99,7 +101,7 @@ export const ChangePasswordPage = () => {
             {/* New Password */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                New Password *
+                {t.auth.newPassword} *
               </label>
               <input
                 type="password"
@@ -125,7 +127,7 @@ export const ChangePasswordPage = () => {
             {/* Confirm Password */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Confirm New Password *
+                {t.auth.confirmPassword} *
               </label>
               <input
                 type="password"
@@ -180,7 +182,7 @@ export const ChangePasswordPage = () => {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    Change Password
+                    {t.nav.changePassword}
                   </span>
                 )}
               </button>
@@ -189,7 +191,7 @@ export const ChangePasswordPage = () => {
                 onClick={() => navigate('/')}
                 className="btn-secondary px-8"
               >
-                Cancel
+                {t.common.cancel}
               </button>
             </div>
           </form>

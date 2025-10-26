@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useTranslation } from '../i18n/i18nContext';
 
 export const LoginPage = () => {
   const [identifier, setIdentifier] = useState('');
@@ -9,6 +10,7 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuthStore();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,10 +41,10 @@ export const LoginPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2 gradient-text text-shadow-lg">
-            Welcome Back
+            {t.auth.login}
           </h1>
           <p className="text-slate-600 text-sm">
-            Sign in to your account
+            {t.auth.signIn}
           </p>
         </div>
 
@@ -50,7 +52,7 @@ export const LoginPage = () => {
           {/* Username/Email Input */}
           <div className="animate-slide-up" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Username or Email
+              {t.auth.username} or {t.auth.email}
             </label>
             <input
               type="text"
@@ -65,7 +67,7 @@ export const LoginPage = () => {
           {/* Password Input */}
           <div className="animate-slide-up" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Password
+              {t.auth.password}
             </label>
             <input
               type="password"
@@ -99,7 +101,7 @@ export const LoginPage = () => {
                 Signing in...
               </span>
             ) : (
-              'Sign In'
+              {t.auth.signIn}
             )}
           </button>
         </form>

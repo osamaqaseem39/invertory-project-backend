@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslation } from '../i18n/i18nContext';
 import { 
   Plus, 
   Users, 
@@ -49,6 +50,7 @@ interface LicensePricing {
 }
 
 const MVPSystemDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [statistics, setStatistics] = useState<OnboardingStatistics | null>(null);
   const [licensePricing, setLicensePricing] = useState<LicensePricing>({});
   const [loading, setLoading] = useState(true);
@@ -339,7 +341,7 @@ const MVPSystemDashboard: React.FC = () => {
                 <form onSubmit={handleOnboardClient} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="client_name">Client Name *</Label>
+                      <Label htmlFor="client_name">{t.customers.customer} *</Label>
                       <Input
                         id="client_name"
                         value={onboardingData.client_name}
@@ -348,7 +350,7 @@ const MVPSystemDashboard: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="contact_email">Contact Email *</Label>
+                      <Label htmlFor="contact_email">{t.customers.email} *</Label>
                       <Input
                         id="contact_email"
                         type="email"
@@ -358,7 +360,7 @@ const MVPSystemDashboard: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="contact_phone">Contact Phone</Label>
+                      <Label htmlFor="contact_phone">{t.customers.phone}</Label>
                       <Input
                         id="contact_phone"
                         value={onboardingData.contact_phone}
@@ -366,7 +368,7 @@ const MVPSystemDashboard: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="company_name">Company Name</Label>
+                      <Label htmlFor="company_name">{t.customers.companyName}</Label>
                       <Input
                         id="company_name"
                         value={onboardingData.company_name}
@@ -374,7 +376,7 @@ const MVPSystemDashboard: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="country">Country</Label>
+                      <Label htmlFor="country">{t.customers.country}</Label>
                       <Input
                         id="country"
                         value={onboardingData.country}

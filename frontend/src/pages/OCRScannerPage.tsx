@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { FileUpload } from '../components/FileUpload';
 import { ocrAPI } from '../api/ocr';
+import { useTranslation } from '../i18n/i18nContext';
 
 export const OCRScannerPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sourceType, setSourceType] = useState<'RECEIPT' | 'INVOICE' | 'PURCHASE_ORDER' | 'PRICE_LIST'>('RECEIPT');
   const [sourceReference, setSourceReference] = useState('');
@@ -76,9 +78,9 @@ export const OCRScannerPage = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="glass rounded-3xl p-6 shadow-xl animate-slide-down">
-          <h1 className="text-3xl font-bold gradient-text mb-2">📸 OCR Scanner</h1>
+          <h1 className="text-3xl font-bold gradient-text mb-2">📸 {t.ocr.ocrScanner}</h1>
           <p className="text-slate-600 text-sm">
-            Upload receipts or invoices to automatically extract product information
+            {t.ocr.uploadDocument}
           </p>
         </div>
 
@@ -87,13 +89,13 @@ export const OCRScannerPage = () => {
           <div className="space-y-6">
             {/* Source Type */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Document Type *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">{t.ocr.documentType} *</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { value: 'RECEIPT', label: '🧾 Receipt', icon: '🧾' },
-                  { value: 'INVOICE', label: '📄 Invoice', icon: '📄' },
-                  { value: 'PURCHASE_ORDER', label: '📋 Purchase Order', icon: '📋' },
-                  { value: 'PRICE_LIST', label: '💰 Price List', icon: '💰' },
+                  { value: 'RECEIPT', label: `🧾 ${t.ocr.receipt}`, icon: '🧾' },
+                  { value: 'INVOICE', label: `📄 ${t.ocr.invoice}`, icon: '📄' },
+                  { value: 'PURCHASE_ORDER', label: `📋 ${t.ocr.purchaseOrder}`, icon: '📋' },
+                  { value: 'PRICE_LIST', label: `💰 ${t.ocr.priceList}`, icon: '💰' },
                 ].map((type) => (
                   <button
                     key={type.value}
@@ -118,7 +120,7 @@ export const OCRScannerPage = () => {
             {/* Reference Number */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Reference Number <span className="text-slate-400">(optional)</span>
+                {t.ocr.referenceNumber} <span className="text-slate-400">(optional)</span>
               </label>
               <input
                 type="text"
@@ -238,7 +240,7 @@ export const OCRScannerPage = () => {
                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Upload & Process
+                    {t.ocr.uploadAndProcess}
                   </>
                 )}
               </button>
@@ -248,7 +250,7 @@ export const OCRScannerPage = () => {
                 className="btn-secondary px-8"
                 disabled={isUploading || isProcessing}
               >
-                Cancel
+                {t.common.cancel}
               </button>
             </div>
           </div>
@@ -264,16 +266,16 @@ export const OCRScannerPage = () => {
                 clipRule="evenodd"
               />
             </svg>
-            How it works:
+            {t.ocr.uploadDocument}
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start gap-2">
               <span className="text-blue-600 mt-0.5">1.</span>
-              <span>Upload your receipt, invoice, or price list (JPG, PNG, or PDF)</span>
+              <span>{t.ocr.uploadDocument}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600 mt-0.5">2.</span>
-              <span>Our OCR engine extracts product names, SKUs, prices, and quantities</span>
+              <span>{t.ocr.extractedProducts}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600 mt-0.5">3.</span>

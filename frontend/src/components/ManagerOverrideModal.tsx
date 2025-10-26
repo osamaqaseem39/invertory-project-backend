@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { professionalPOSAPI } from '../api/professional-pos';
+import { useTranslation } from '../i18n/i18nContext';
 
 interface ManagerOverrideModalProps {
   sessionId: string;
@@ -16,6 +17,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
   onClose,
   message,
 }) => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [reasonCode, setReasonCode] = useState('');
@@ -73,8 +75,8 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             <div>
-              <h3 className="text-2xl font-bold">Manager Override Required</h3>
-              <p className="text-yellow-100 text-sm">Authorization needed to proceed</p>
+              <h3 className="text-2xl font-bold">{t.common.confirm}</h3>
+              <p className="text-yellow-100 text-sm">{t.common.confirm}</p>
             </div>
           </div>
         </div>
@@ -84,7 +86,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
           {/* Message */}
           {message && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
-              <p className="font-semibold">Override Required:</p>
+                <p className="font-semibold">{t.common.confirm}:</p>
               <p>{message}</p>
             </div>
           )}
@@ -92,7 +94,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
           {/* Manager Username */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Manager Username *
+              {t.auth.username} *
             </label>
             <input
               type="text"
@@ -108,7 +110,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
           {/* Manager PIN */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Manager PIN *
+              PIN *
             </label>
             <input
               type="password"
@@ -123,7 +125,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
           {/* Reason Code */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Reason Code *
+              {t.inventory.reason} *
             </label>
             <select
               value={reasonCode}
@@ -145,7 +147,8 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
           {/* Reason Detail */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Additional Details (Optional)
+              {t.common.description}
+            </label>
             </label>
             <textarea
               value={reasonDetail}
@@ -183,7 +186,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Approve Override
+                  {t.common.submit}
                 </>
               )}
             </button>
@@ -192,7 +195,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
               onClick={onClose}
               className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
             >
-              Cancel
+                {t.common.cancel}
             </button>
           </div>
 

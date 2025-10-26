@@ -6,9 +6,11 @@ import { FileUpload } from '../components/FileUpload';
 import { productsAPI } from '../api/products';
 import { inventoryAPI } from '../api/inventory';
 import { Category } from '../types';
+import { useTranslation } from '../i18n/i18nContext';
 
 export const CreateProductPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [formData, setFormData] = useState({
     sku: '',
@@ -131,8 +133,8 @@ export const CreateProductPage = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="glass rounded-3xl p-6 shadow-xl animate-slide-down">
-          <h1 className="text-3xl font-bold gradient-text mb-2">Add New Product</h1>
-          <p className="text-slate-600 text-sm">Create a new product in the catalog</p>
+          <h1 className="text-3xl font-bold gradient-text mb-2">{t.products.addProduct}</h1>
+          <p className="text-slate-600 text-sm">{t.products.manageInventory}</p>
         </div>
 
         {/* Form */}
@@ -146,12 +148,12 @@ export const CreateProductPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                Core Information
+                {t.common.description}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">SKU *</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.sku} *</label>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <input
@@ -162,7 +164,7 @@ export const CreateProductPage = () => {
                         className="input-field"
                         placeholder="PRODUCT-001"
                       />
-                      <p className="mt-1 text-xs text-slate-500">Unique product identifier</p>
+                      <p className="mt-1 text-xs text-slate-500">{t.products.sku}</p>
                     </div>
                     <button
                       type="button"
@@ -180,7 +182,7 @@ export const CreateProductPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Barcode</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.barcode}</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -205,7 +207,7 @@ export const CreateProductPage = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Product Name *</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.name} *</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -217,7 +219,7 @@ export const CreateProductPage = () => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.description}</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -242,7 +244,7 @@ export const CreateProductPage = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Brand</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.brand}</label>
                   <input
                     type="text"
                     value={formData.brand}
@@ -254,14 +256,14 @@ export const CreateProductPage = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Category {categories.length > 0 && `(${categories.length} available)`}
+                    {t.products.category} {categories.length > 0 && `(${categories.length} available)`}
                   </label>
                   <select
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                     className="input-field"
                   >
-                    <option value="">Select a category (optional)</option>
+                    <option value="">{t.categories.addCategory}</option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
@@ -276,7 +278,7 @@ export const CreateProductPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Unit of Measure</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.uom}</label>
                   <select
                     value={formData.uom}
                     onChange={(e) => setFormData({ ...formData, uom: e.target.value })}
@@ -305,7 +307,7 @@ export const CreateProductPage = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Selling Price *</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.price} *</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
                     <input
@@ -321,7 +323,7 @@ export const CreateProductPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Cost Price</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.cost}</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">$</span>
                     <input
@@ -333,7 +335,7 @@ export const CreateProductPage = () => {
                       placeholder="50.00"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">Optional: for profit tracking</p>
+                  <p className="mt-1 text-xs text-slate-500">{t.products.cost}</p>
                 </div>
               </div>
 
@@ -341,7 +343,7 @@ export const CreateProductPage = () => {
               {formData.cost > 0 && formData.price > 0 && (
                 <div className="mt-4 p-4 glass rounded-xl">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-700">Profit Margin:</span>
+                    <span className="text-sm font-medium text-slate-700">{t.common.total}:</span>
                     <span className="text-lg font-bold text-green-600">
                       {(((formData.price - formData.cost) / formData.price) * 100).toFixed(1)}%
                     </span>
@@ -363,7 +365,7 @@ export const CreateProductPage = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Stock Quantity</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.inventory.stockQuantity}</label>
                   <input
                     type="number"
                     value={formData.stock_quantity}
@@ -371,11 +373,11 @@ export const CreateProductPage = () => {
                     className="input-field"
                     placeholder="100"
                   />
-                  <p className="mt-1 text-xs text-slate-500">Current available stock</p>
+                  <p className="mt-1 text-xs text-slate-500">{t.inventory.currentStock}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Reorder Level</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.reorderLevel}</label>
                   <input
                     type="number"
                     value={formData.reorder_level}
@@ -383,11 +385,11 @@ export const CreateProductPage = () => {
                     className="input-field"
                     placeholder="20"
                   />
-                  <p className="mt-1 text-xs text-slate-500">Alert when stock reaches this level</p>
+                  <p className="mt-1 text-xs text-slate-500">{t.products.reorderLevel}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Reorder Quantity</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.reorderQuantity}</label>
                   <input
                     type="number"
                     value={formData.reorder_quantity}
@@ -395,11 +397,11 @@ export const CreateProductPage = () => {
                     className="input-field"
                     placeholder="50"
                   />
-                  <p className="mt-1 text-xs text-slate-500">How much to reorder</p>
+                  <p className="mt-1 text-xs text-slate-500">{t.products.reorderQuantity}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Max Stock Level</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.maxStockLevel}</label>
                   <input
                     type="number"
                     value={formData.max_stock_level}
@@ -407,11 +409,11 @@ export const CreateProductPage = () => {
                     className="input-field"
                     placeholder="500"
                   />
-                  <p className="mt-1 text-xs text-slate-500">Maximum stock to keep</p>
+                  <p className="mt-1 text-xs text-slate-500">{t.products.maxStockLevel}</p>
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.location}</label>
                   <input
                     type="text"
                     value={formData.location}
@@ -419,7 +421,7 @@ export const CreateProductPage = () => {
                     className="input-field"
                     placeholder="Warehouse A, Shelf 3"
                   />
-                  <p className="mt-1 text-xs text-slate-500">Physical storage location</p>
+                  <p className="mt-1 text-xs text-slate-500">{t.products.location}</p>
                 </div>
               </div>
             </div>
@@ -460,7 +462,7 @@ export const CreateProductPage = () => {
                 {imagePreviews.length > 0 && (
                   <div>
                     <p className="text-sm font-semibold text-slate-700 mb-3">
-                      Uploaded Images ({imagePreviews.length}/5):
+                      {t.products.images} ({imagePreviews.length}/5):
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                       {imagePreviews.map((preview, index) => (
@@ -484,7 +486,7 @@ export const CreateProductPage = () => {
                           </button>
                           {index === 0 && (
                             <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-md shadow-md font-semibold">
-                              Primary
+                              {t.common.active}
                             </div>
                           )}
                         </div>
@@ -528,7 +530,7 @@ export const CreateProductPage = () => {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Create Product
+                    {t.products.addProduct}
                   </span>
                 )}
               </button>
@@ -537,7 +539,7 @@ export const CreateProductPage = () => {
                 onClick={() => navigate('/products')}
                 className="btn-secondary px-8"
               >
-                Cancel
+                {t.common.cancel}
               </button>
             </div>
           </form>
@@ -548,8 +550,8 @@ export const CreateProductPage = () => {
           <BarcodeScanner
             onScan={handleBarcodeScanned}
             onClose={() => setShowBarcodeScanner(false)}
-            title="Scan Product Barcode"
-            instructions="Point your camera at the product's barcode to auto-fill the barcode field"
+            title={t.ocr.ocrScanner}
+            instructions={t.ocr.uploadDocument}
           />
         )}
 
@@ -558,8 +560,8 @@ export const CreateProductPage = () => {
           <BarcodeScanner
             onScan={handleSKUScanned}
             onClose={() => setShowSKUScanner(false)}
-            title="Scan SKU Code"
-            instructions="Point your camera at the SKU code to auto-fill the SKU field"
+            title={t.products.sku}
+            instructions={t.products.sku}
           />
         )}
       </div>

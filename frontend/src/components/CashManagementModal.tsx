@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CashEventType } from '../types';
 import { professionalPOSAPI } from '../api/professional-pos';
+import { useTranslation } from '../i18n/i18nContext';
 
 interface CashManagementModalProps {
   sessionId: string;
@@ -15,6 +16,7 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
   onSuccess,
   type,
 }) => {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState<number>(0);
   const [reason, setReason] = useState('');
   const [reference, setReference] = useState('');
@@ -24,17 +26,17 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
   const getTitle = () => {
     switch (type) {
       case CashEventType.PAID_IN:
-        return 'Cash Paid In';
+        return t.pos.session;
       case CashEventType.PAID_OUT:
-        return 'Cash Paid Out';
+        return t.pos.session;
       case CashEventType.NO_SALE:
-        return 'No Sale - Open Drawer';
+        return t.pos.session;
       case CashEventType.CASH_DROP:
-        return 'Cash Drop to Safe';
+        return t.pos.session;
       case CashEventType.PETTY_CASH:
-        return 'Petty Cash';
+        return t.pos.session;
       default:
-        return 'Cash Event';
+        return t.pos.session;
     }
   };
 
@@ -107,7 +109,7 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
           {type !== CashEventType.NO_SALE && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Amount *
+                {t.common.amount} *
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
@@ -131,7 +133,7 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
           {/* Reason */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Reason *
+              {t.inventory.reason} *
             </label>
             <textarea
               value={reason}
@@ -146,7 +148,7 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
           {/* Reference (optional) */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Reference (Optional)
+              {t.payments.referenceNumber}
             </label>
             <input
               type="text"
@@ -171,14 +173,14 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
               disabled={isProcessing}
               className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? 'Processing...' : 'Record Event'}
+              {isProcessing ? t.common.loading : t.common.submit}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         </form>

@@ -4,10 +4,12 @@ import { Layout } from '../components/Layout';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
 import { usersAPI } from '../api/users';
+import { useTranslation } from '../i18n/i18nContext';
 
 export const CreateUserPage = () => {
   const navigate = useNavigate();
   const { permissions } = useAuthStore();
+  const { t } = useTranslation();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -66,8 +68,8 @@ export const CreateUserPage = () => {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="glass rounded-3xl p-6 shadow-xl animate-slide-down">
-          <h1 className="text-3xl font-bold gradient-text mb-2">Create New User</h1>
-          <p className="text-slate-600 text-sm">Add a new user to the system</p>
+          <h1 className="text-3xl font-bold gradient-text mb-2">{t.users.addUser}</h1>
+          <p className="text-slate-600 text-sm">{t.users.userDetails}</p>
         </div>
 
         {/* Form */}
@@ -76,7 +78,7 @@ export const CreateUserPage = () => {
             {/* Username */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Username *
+                {t.auth.username} *
               </label>
               <input
                 type="text"
@@ -91,7 +93,7 @@ export const CreateUserPage = () => {
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Email *
+                {t.auth.email} *
               </label>
               <input
                 type="email"
@@ -106,7 +108,7 @@ export const CreateUserPage = () => {
             {/* Display Name */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Display Name *
+                {t.users.displayName} *
               </label>
               <input
                 type="text"
@@ -121,7 +123,7 @@ export const CreateUserPage = () => {
             {/* Password */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Password *
+                {t.auth.password} *
               </label>
               <input
                 type="password"
@@ -139,7 +141,7 @@ export const CreateUserPage = () => {
             {/* Role Selection */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Role *
+                {t.users.role} *
               </label>
               <select
                 value={formData.role}
@@ -147,7 +149,7 @@ export const CreateUserPage = () => {
                 required
                 className="input-field"
               >
-                <option value="">Select a role</option>
+                <option value="">{t.users.addUser}</option>
                 {allowedRoles.map(role => (
                   <option key={role} value={role}>
                     {role.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
@@ -203,7 +205,7 @@ export const CreateUserPage = () => {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Create User
+                    {t.users.addUser}
                   </span>
                 )}
               </button>
@@ -212,7 +214,7 @@ export const CreateUserPage = () => {
                 onClick={() => navigate('/users')}
                 className="btn-secondary"
               >
-                Cancel
+                {t.common.cancel}
               </button>
             </div>
           </form>
