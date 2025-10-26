@@ -10,7 +10,7 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuthStore();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -60,7 +60,7 @@ export const LoginPage = () => {
               onChange={(e) => setIdentifier(e.target.value)}
               required
               className="input-field"
-              placeholder="Enter your username or email"
+              placeholder={language === 'ar' ? 'أدخل اسم المستخدم أو البريد الإلكتروني' : 'Enter your username or email'}
             />
           </div>
 
@@ -75,7 +75,7 @@ export const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="input-field"
-              placeholder="Enter your password"
+              placeholder={language === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password'}
             />
           </div>
 
@@ -98,17 +98,17 @@ export const LoginPage = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Signing in...
+                {language === 'ar' ? 'جاري تسجيل الدخول...' : 'Signing in...'}
               </span>
             ) : (
-              {t.auth.signIn}
+              t.auth.signIn
             )}
           </button>
         </form>
 
         {/* Demo Credentials */}
         <div className="mt-8 glass rounded-xl p-4 animate-slide-up" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
-          <p className="text-xs font-semibold text-slate-700 mb-2">Demo Credentials:</p>
+          <p className="text-xs font-semibold text-slate-700 mb-2">{language === 'ar' ? 'بيانات الاعتماد التجريبية:' : 'Demo Credentials:'}</p>
           <div className="space-y-1 text-xs text-slate-600">
             <p><span className="font-mono bg-slate-100 px-2 py-1 rounded">owner</span> / <span className="font-mono bg-slate-100 px-2 py-1 rounded">Owner@123456</span></p>
             <p><span className="font-mono bg-slate-100 px-2 py-1 rounded">admin</span> / <span className="font-mono bg-slate-100 px-2 py-1 rounded">Admin@123456</span></p>

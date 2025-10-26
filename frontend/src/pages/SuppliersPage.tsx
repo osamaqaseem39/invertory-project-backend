@@ -7,7 +7,7 @@ import { inventoryAPI } from '../api/inventory';
 
 export const SuppliersPage = () => {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,7 +118,7 @@ export const SuppliersPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input-field pl-10"
-              placeholder="Search suppliers by name, contact, or email..."
+              placeholder={language === 'ar' ? 'البحث عن الموردين بالاسم أو جهة الاتصال أو البريد الإلكتروني...' : 'Search suppliers by name, contact, or email...'}
             />
           </div>
         </div>
@@ -227,7 +227,7 @@ export const SuppliersPage = () => {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     className="input-field"
-                    placeholder="Acme Corporation"
+                    placeholder={language === 'ar' ? 'شركة أكمي' : 'Acme Corporation'}
                   />
                 </div>
 
@@ -238,7 +238,7 @@ export const SuppliersPage = () => {
                     value={formData.contact_person}
                     onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
                     className="input-field"
-                    placeholder="John Doe"
+                    placeholder={language === 'ar' ? 'أحمد محمد' : 'John Doe'}
                   />
                 </div>
 
@@ -282,7 +282,7 @@ export const SuppliersPage = () => {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     className="input-field"
                     rows={2}
-                    placeholder="123 Main St, City, Country"
+                    placeholder={language === 'ar' ? '123 الشارع الرئيسي، المدينة، البلد' : '123 Main St, City, Country'}
                   />
                 </div>
 
@@ -293,22 +293,22 @@ export const SuppliersPage = () => {
                     onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
                     className="input-field"
                   >
-                    <option value="">Select...</option>
-                    <option value="COD">Cash on Delivery</option>
-                    <option value="NET15">Net 15 Days</option>
-                    <option value="NET30">Net 30 Days</option>
-                    <option value="NET60">Net 60 Days</option>
-                    <option value="NET90">Net 90 Days</option>
+                    <option value="">{language === 'ar' ? 'اختر...' : 'Select...'}</option>
+                    <option value="COD">{language === 'ar' ? 'الدفع عند التسليم' : 'Cash on Delivery'}</option>
+                    <option value="NET15">{language === 'ar' ? 'صافي 15 يوم' : 'Net 15 Days'}</option>
+                    <option value="NET30">{language === 'ar' ? 'صافي 30 يوم' : 'Net 30 Days'}</option>
+                    <option value="NET60">{language === 'ar' ? 'صافي 60 يوم' : 'Net 60 Days'}</option>
+                    <option value="NET90">{language === 'ar' ? 'صافي 90 يوم' : 'Net 90 Days'}</option>
                   </select>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="btn-primary flex-1">
-                  {editingSupplier ? 'Update Supplier' : 'Create Supplier'}
+                  {editingSupplier ? (language === 'ar' ? 'تحديث المورد' : 'Update Supplier') : (language === 'ar' ? 'إنشاء مورد' : 'Create Supplier')}
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary px-8">
-                  Cancel
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
                 </button>
               </div>
             </form>

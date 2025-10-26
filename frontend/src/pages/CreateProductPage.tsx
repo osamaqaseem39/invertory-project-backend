@@ -10,7 +10,7 @@ import { useTranslation } from '../i18n/i18nContext';
 
 export const CreateProductPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   
   const [formData, setFormData] = useState({
     sku: '',
@@ -162,7 +162,7 @@ export const CreateProductPage = () => {
                         onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                         required
                         className="input-field"
-                        placeholder="PRODUCT-001"
+                        placeholder={language === 'ar' ? 'منتج-001' : 'PRODUCT-001'}
                       />
                       <p className="mt-1 text-xs text-slate-500">{t.products.sku}</p>
                     </div>
@@ -170,7 +170,7 @@ export const CreateProductPage = () => {
                       type="button"
                       onClick={() => setShowSKUScanner(true)}
                       className="px-4 h-10 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
-                      title="Scan SKU with camera"
+                      title={language === 'ar' ? 'مسح رمز المنتج بالكاميرا' : 'Scan SKU with camera'}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -195,7 +195,7 @@ export const CreateProductPage = () => {
                       type="button"
                       onClick={() => setShowBarcodeScanner(true)}
                       className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 shadow-md hover:shadow-lg"
-                      title="Scan barcode with camera"
+                      title={language === 'ar' ? 'مسح الباركود بالكاميرا' : 'Scan barcode with camera'}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -214,18 +214,18 @@ export const CreateProductPage = () => {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     className="input-field"
-                    placeholder="Dell XPS 13 Laptop"
+                    placeholder={language === 'ar' ? 'لابتوب ديل XPS 13' : 'Dell XPS 13 Laptop'}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.products.description}</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">{t.common.description}</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="input-field"
                     rows={3}
-                    placeholder="Detailed product description..."
+                    placeholder={language === 'ar' ? 'وصف مفصل للمنتج...' : 'Detailed product description...'}
                   />
                 </div>
               </div>
@@ -250,7 +250,7 @@ export const CreateProductPage = () => {
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
                     className="input-field"
-                    placeholder="Apple"
+                    placeholder={language === 'ar' ? 'أبل' : 'Apple'}
                   />
                 </div>
 
@@ -272,7 +272,10 @@ export const CreateProductPage = () => {
                   </select>
                   {categories.length === 0 && (
                     <p className="mt-1 text-xs text-orange-600">
-                      No categories available. <a href="/categories" className="underline">Create one first</a>
+                      {language === 'ar' ? 'لا توجد فئات متاحة. ' : 'No categories available. '}
+                      <a href="/categories" className="underline">
+                        {language === 'ar' ? 'أنشئ واحدة أولاً' : 'Create one first'}
+                      </a>
                     </p>
                   )}
                 </div>
@@ -284,11 +287,11 @@ export const CreateProductPage = () => {
                     onChange={(e) => setFormData({ ...formData, uom: e.target.value })}
                     className="input-field"
                   >
-                    <option value="unit">Unit</option>
-                    <option value="kg">Kilogram (kg)</option>
-                    <option value="lb">Pound (lb)</option>
-                    <option value="box">Box</option>
-                    <option value="dozen">Dozen</option>
+                    <option value="unit">{language === 'ar' ? 'وحدة' : 'Unit'}</option>
+                    <option value="kg">{language === 'ar' ? 'كيلوغرام (كغ)' : 'Kilogram (kg)'}</option>
+                    <option value="lb">{language === 'ar' ? 'رطل (رطل)' : 'Pound (lb)'}</option>
+                    <option value="box">{language === 'ar' ? 'صندوق' : 'Box'}</option>
+                    <option value="dozen">{language === 'ar' ? 'دزينة' : 'Dozen'}</option>
                   </select>
                 </div>
               </div>
@@ -419,7 +422,7 @@ export const CreateProductPage = () => {
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="input-field"
-                    placeholder="Warehouse A, Shelf 3"
+                    placeholder={language === 'ar' ? 'مستودع أ، رف 3' : 'Warehouse A, Shelf 3'}
                   />
                   <p className="mt-1 text-xs text-slate-500">{t.products.location}</p>
                 </div>
@@ -454,7 +457,7 @@ export const CreateProductPage = () => {
                     accept="image/jpeg,image/png"
                     maxSize={5 * 1024 * 1024}
                     label=""
-                    description="Upload from device or drag & drop"
+                    description={language === 'ar' ? 'رفع من الجهاز أو السحب والإفلات' : 'Upload from device or drag & drop'}
                   />
                 )}
 
@@ -523,7 +526,7 @@ export const CreateProductPage = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Creating...
+                    {language === 'ar' ? 'جاري الإنشاء...' : 'Creating...'}
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">

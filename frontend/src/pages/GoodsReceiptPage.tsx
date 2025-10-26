@@ -18,7 +18,7 @@ interface GRNItem {
 
 export const GoodsReceiptPage = () => {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [approvedPOs, setApprovedPOs] = useState<PurchaseOrder[]>([]);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -271,7 +271,7 @@ export const GoodsReceiptPage = () => {
                           value={item.notes}
                           onChange={(e) => handleItemChange(index, 'notes', e.target.value)}
                           className="input-field text-sm"
-                          placeholder="Any discrepancies or notes..."
+                          placeholder={language === 'ar' ? 'أي تناقضات أو ملاحظات...' : 'Any discrepancies or notes...'}
                         />
                       </div>
 
@@ -301,7 +301,7 @@ export const GoodsReceiptPage = () => {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="input-field"
                   rows={2}
-                  placeholder="Overall notes about this receipt..."
+                  placeholder={language === 'ar' ? 'ملاحظات عامة حول هذا الاستلام...' : 'Overall notes about this receipt...'}
                 />
               </div>
 
@@ -312,10 +312,10 @@ export const GoodsReceiptPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="text-sm text-blue-800">
-                    <p className="font-semibold mb-1">What happens next:</p>
-                    <p>• Product stock will be increased by net received quantity (received - damaged)</p>
-                    <p>• Stock movements will be logged automatically</p>
-                    <p>• Purchase order status will update to Partially Received or Received</p>
+                    <p className="font-semibold mb-1">{language === 'ar' ? 'ما يحدث بعد ذلك:' : 'What happens next:'}</p>
+                    <p>• {language === 'ar' ? 'سيتم زيادة مخزون المنتج بالكمية المستلمة الصافية (المستلمة - التالفة)' : 'Product stock will be increased by net received quantity (received - damaged)'}</p>
+                    <p>• {language === 'ar' ? 'سيتم تسجيل حركات المخزون تلقائياً' : 'Stock movements will be logged automatically'}</p>
+                    <p>• {language === 'ar' ? 'سيتم تحديث حالة أمر الشراء إلى مستلم جزئياً أو مستلم' : 'Purchase order status will update to Partially Received or Received'}</p>
                   </div>
                 </div>
               </div>
@@ -326,7 +326,7 @@ export const GoodsReceiptPage = () => {
                   {t.inventory.completeReceipt || 'Complete Goods Receipt'}
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary px-8">
-                  Cancel
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
                 </button>
               </div>
             </form>

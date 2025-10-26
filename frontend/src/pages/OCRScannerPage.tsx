@@ -7,7 +7,7 @@ import { useTranslation } from '../i18n/i18nContext';
 
 export const OCRScannerPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sourceType, setSourceType] = useState<'RECEIPT' | 'INVOICE' | 'PURCHASE_ORDER' | 'PRICE_LIST'>('RECEIPT');
   const [sourceReference, setSourceReference] = useState('');
@@ -126,7 +126,7 @@ export const OCRScannerPage = () => {
                 type="text"
                 value={sourceReference}
                 onChange={(e) => setSourceReference(e.target.value)}
-                placeholder="e.g., INV-2024-001"
+                placeholder={language === 'ar' ? 'مثال: INV-2024-001' : 'e.g., INV-2024-001'}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -228,7 +228,7 @@ export const OCRScannerPage = () => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Processing...
+                    {language === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
                   </>
                 ) : (
                   <>

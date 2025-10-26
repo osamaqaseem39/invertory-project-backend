@@ -6,7 +6,7 @@ import { useTranslation } from '../i18n/i18nContext';
 
 export const ChangePasswordPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -94,7 +94,7 @@ export const ChangePasswordPage = () => {
                 onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
                 required
                 className="input-field"
-                placeholder="Enter your current password"
+                placeholder={language === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter your current password'}
               />
             </div>
 
@@ -109,7 +109,7 @@ export const ChangePasswordPage = () => {
                 onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                 required
                 className="input-field"
-                placeholder="Enter your new password"
+                placeholder={language === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter your new password'}
               />
               {formData.newPassword && (
                 <div className="mt-2 flex items-center gap-2">
@@ -135,7 +135,7 @@ export const ChangePasswordPage = () => {
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 required
                 className="input-field"
-                placeholder="Confirm your new password"
+                placeholder={language === 'ar' ? 'تأكيد كلمة المرور الجديدة' : 'Confirm your new password'}
               />
               {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
                 <p className="mt-2 text-xs text-red-600">Passwords do not match</p>
@@ -175,7 +175,7 @@ export const ChangePasswordPage = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Changing Password...
+                    {language === 'ar' ? 'جاري تغيير كلمة المرور...' : 'Changing Password...'}
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">

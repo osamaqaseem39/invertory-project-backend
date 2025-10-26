@@ -16,7 +16,7 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
   onSuccess,
   type,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [amount, setAmount] = useState<number>(0);
   const [reason, setReason] = useState('');
   const [reference, setReference] = useState('');
@@ -155,7 +155,7 @@ export const CashManagementModal: React.FC<CashManagementModalProps> = ({
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Invoice #, receipt #, etc."
+              placeholder={language === 'ar' ? 'رقم الفاتورة، رقم الإيصال، إلخ.' : 'Invoice #, receipt #, etc.'}
             />
           </div>
 

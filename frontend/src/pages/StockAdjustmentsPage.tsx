@@ -8,7 +8,7 @@ import { productsAPI } from '../api/products';
 
 export const StockAdjustmentsPage = () => {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -307,7 +307,7 @@ export const StockAdjustmentsPage = () => {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="input-field"
                   rows={3}
-                  placeholder="Explain the reason for this adjustment..."
+                  placeholder={language === 'ar' ? 'اشرح سبب هذا التعديل...' : 'Explain the reason for this adjustment...'}
                 />
               </div>
 
@@ -317,18 +317,18 @@ export const StockAdjustmentsPage = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="text-sm text-blue-800">
-                    <p className="font-semibold mb-1">Approval Required:</p>
-                    <p>Stock adjustments require approval from Admin or Owner before stock is updated.</p>
+                    <p className="font-semibold mb-1">{language === 'ar' ? 'مطلوب موافقة:' : 'Approval Required:'}</p>
+                    <p>{language === 'ar' ? 'تعديلات المخزون تتطلب موافقة من المدير أو المالك قبل تحديث المخزون.' : 'Stock adjustments require approval from Admin or Owner before stock is updated.'}</p>
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="btn-primary flex-1">
-                  Create Adjustment Request
+                  {language === 'ar' ? 'إنشاء طلب تعديل' : 'Create Adjustment Request'}
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary px-8">
-                  Cancel
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
                 </button>
               </div>
             </form>

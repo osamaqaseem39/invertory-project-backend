@@ -17,7 +17,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   onEmail,
   onReprint,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [email, setEmail] = useState('');
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -74,7 +74,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <p className="text-sm text-gray-600">{receiptData.business_email}</p>
               )}
               {receiptData.tax_id && (
-                <p className="text-sm text-gray-600">Tax ID: {receiptData.tax_id}</p>
+                <p className="text-sm text-gray-600">{language === 'ar' ? 'الرقم الضريبي:' : 'Tax ID:'} {receiptData.tax_id}</p>
               )}
             </div>
 
@@ -201,7 +201,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
               <>
                 <div className="border-t-2 border-dashed border-gray-400 my-4"></div>
                 <div className="text-center text-xs text-gray-600">
-                  <p className="font-semibold mb-1">Return Policy</p>
+                  <p className="font-semibold mb-1">{language === 'ar' ? 'سياسة الإرجاع' : 'Return Policy'}</p>
                   <p>{receiptData.return_policy}</p>
                 </div>
               </>

@@ -9,7 +9,7 @@ import { useTranslation } from '../i18n/i18nContext';
 export const CreateUserPage = () => {
   const navigate = useNavigate();
   const { permissions } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -86,7 +86,7 @@ export const CreateUserPage = () => {
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required
                 className="input-field"
-                placeholder="Enter username"
+                placeholder={language === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username'}
               />
             </div>
 
@@ -101,7 +101,7 @@ export const CreateUserPage = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 className="input-field"
-                placeholder="Enter email address"
+                placeholder={language === 'ar' ? 'أدخل عنوان البريد الإلكتروني' : 'Enter email address'}
               />
             </div>
 
@@ -116,7 +116,7 @@ export const CreateUserPage = () => {
                 onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                 required
                 className="input-field"
-                placeholder="Enter display name"
+                placeholder={language === 'ar' ? 'أدخل الاسم المعروض' : 'Enter display name'}
               />
             </div>
 
@@ -131,7 +131,7 @@ export const CreateUserPage = () => {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 className="input-field"
-                placeholder="Min 10 chars, mixed case + digit/symbol"
+                placeholder={language === 'ar' ? '10 أحرف على الأقل، أحرف كبيرة وصغيرة + رقم/رمز' : 'Min 10 chars, mixed case + digit/symbol'}
               />
               <p className="mt-2 text-xs text-slate-600 glass rounded-lg p-2 inline-block">
                 💡 Password must be at least 10 characters with uppercase, lowercase, and digit/symbol
@@ -198,7 +198,7 @@ export const CreateUserPage = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Creating...
+                    {language === 'ar' ? 'جاري الإنشاء...' : 'Creating...'}
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">

@@ -17,7 +17,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
   onClose,
   message,
 }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [reasonCode, setReasonCode] = useState('');
@@ -102,7 +102,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
               onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="Enter manager username"
+              placeholder={language === 'ar' ? 'أدخل اسم المستخدم للمدير' : 'Enter manager username'}
               autoFocus
             />
           </div>
@@ -118,7 +118,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
               onChange={(e) => setPin(e.target.value)}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="Enter PIN"
+              placeholder={language === 'ar' ? 'أدخل الرقم السري' : 'Enter PIN'}
             />
           </div>
 
@@ -155,7 +155,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
               onChange={(e) => setReasonDetail(e.target.value)}
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="Enter additional details..."
+              placeholder={language === 'ar' ? 'أدخل تفاصيل إضافية...' : 'Enter additional details...'}
             />
           </div>
 
@@ -179,7 +179,7 @@ export const ManagerOverrideModal: React.FC<ManagerOverrideModalProps> = ({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Verifying...
+                  {language === 'ar' ? 'جاري التحقق...' : 'Verifying...'}
                 </>
               ) : (
                 <>

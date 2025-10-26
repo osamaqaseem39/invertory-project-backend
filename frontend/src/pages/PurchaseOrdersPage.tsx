@@ -8,7 +8,7 @@ import { productsAPI } from '../api/products';
 
 export const PurchaseOrdersPage = () => {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -399,17 +399,17 @@ export const PurchaseOrdersPage = () => {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="input-field"
                   rows={2}
-                  placeholder="Optional notes..."
+                  placeholder={language === 'ar' ? 'ملاحظات اختيارية...' : 'Optional notes...'}
                 />
               </div>
 
               {/* Actions */}
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="btn-primary flex-1">
-                  Create Purchase Order
+                  {language === 'ar' ? 'إنشاء أمر شراء' : 'Create Purchase Order'}
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary px-8">
-                  Cancel
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
                 </button>
               </div>
             </form>

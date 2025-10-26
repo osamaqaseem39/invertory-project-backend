@@ -7,7 +7,7 @@ import { inventoryAPI } from '../api/inventory';
 
 export const CategoriesPage = () => {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -207,18 +207,18 @@ export const CategoriesPage = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="input-field"
                   rows={3}
-                  placeholder="Optional description..."
+                  placeholder={language === 'ar' ? 'وصف اختياري...' : 'Optional description...'}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Parent Category</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">{t.common.parent}</label>
                 <select
                   value={formData.parent_id}
                   onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
                   className="input-field"
                 >
-                  <option value="">None (Top Level)</option>
+                  <option value="">{language === 'ar' ? 'لا يوجد (المستوى الأعلى)' : 'None (Top Level)'}</option>
                   {categories
                     .filter(c => !editingCategory || c.id !== editingCategory.id)
                     .map(c => (
@@ -229,10 +229,10 @@ export const CategoriesPage = () => {
 
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="btn-primary flex-1">
-                  {editingCategory ? 'Update' : 'Create'}
+                  {editingCategory ? (language === 'ar' ? 'تحديث' : 'Update') : (language === 'ar' ? 'إنشاء' : 'Create')}
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary px-8">
-                  Cancel
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
                 </button>
               </div>
             </form>
