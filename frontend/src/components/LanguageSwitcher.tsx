@@ -1,10 +1,11 @@
 import { useTranslation } from '../i18n/i18nContext';
+import { RTLFlex } from './RTLComponents';
 
 export const LanguageSwitcher = () => {
   const { language, setLanguage } = useTranslation();
 
   return (
-    <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm p-1">
+    <RTLFlex className="items-center gap-2 bg-white rounded-lg shadow-sm p-1">
       <button
         onClick={() => setLanguage('en')}
         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -25,7 +26,7 @@ export const LanguageSwitcher = () => {
       >
         العربية
       </button>
-    </div>
+    </RTLFlex>
   );
 };
 

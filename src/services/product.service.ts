@@ -9,8 +9,11 @@ interface CreateProductParams {
   sku: string;
   barcode?: string | null;
   name: string;
+  name_ar?: string | null;
   description?: string | null;
+  description_ar?: string | null;
   brand?: string | null;
+  brand_ar?: string | null;
   category_id?: string | null;
   stock_quantity?: number;
   reorder_level?: number;
@@ -28,8 +31,11 @@ interface UpdateProductParams {
   sku?: string;
   barcode?: string | null;
   name?: string;
+  name_ar?: string | null;
   description?: string | null;
+  description_ar?: string | null;
   brand?: string | null;
+  brand_ar?: string | null;
   category_id?: string | null;
   stock_quantity?: number;
   reorder_level?: number;
@@ -220,12 +226,17 @@ export class ProductService {
 
     const where: Prisma.ProductWhereInput = {};
 
-    // Search query
+    // Search query - Enhanced to search across multiple fields
     if (params.q) {
       where.OR = [
         { name: { contains: params.q, mode: 'insensitive' } },
         { sku: { contains: params.q, mode: 'insensitive' } },
         { brand: { contains: params.q, mode: 'insensitive' } },
+        { description: { contains: params.q, mode: 'insensitive' } },
+        { barcode: { contains: params.q, mode: 'insensitive' } },
+        { location: { contains: params.q, mode: 'insensitive' } },
+        { uom: { contains: params.q, mode: 'insensitive' } },
+        { category: { name: { contains: params.q, mode: 'insensitive' } } },
       ];
     }
 
@@ -267,6 +278,9 @@ export class ProductService {
         where,
         include: {
           images: includeImages,
+          category: {
+            select: { id: true, name: true, description: true },
+          },
           created_by: {
             select: { id: true, username: true, display_name: true },
           },

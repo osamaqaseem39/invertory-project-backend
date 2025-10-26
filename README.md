@@ -1,6 +1,10 @@
-# User Management System
+# Inventory Management System
 
-A production-ready **User Management System** with robust **RBAC** (Role-Based Access Control), built with **Node.js**, **TypeScript**, **Express**, **PostgreSQL**, and **React + Electron**.
+A complete **Inventory Management System** with **4 components**:
+- 🌐 **Web Application** (React frontend)
+- 📡 **Backend API** (Node.js/Express server)  
+- 🖥️ **Desktop Application** (Electron)
+- 🗄️ **Database** (PostgreSQL with Prisma)
 
 ## 🚀 Features
 
@@ -43,11 +47,59 @@ guest → (none)
 
 ## 🛠️ Quick Start
 
-### 1. Clone and Install
-
+### **1. Backend Server**
 ```bash
-cd 110ct
+# Install dependencies
 npm install
+
+# Start development server
+npm run dev
+# Server runs on http://localhost:4000
+```
+
+### **2. Web Application**
+```bash
+# Install frontend dependencies
+cd frontend
+npm install
+
+# Start development server
+npm run dev
+# Frontend runs on http://localhost:5173
+```
+
+### **3. Desktop Application**
+```bash
+# Install electron dependencies
+cd electron
+npm install
+
+# Run desktop app
+npm run dev
+
+# Or use the ready-made executable
+cd portable-dist
+.\Inventory Management System.bat
+```
+
+### **4. Database Setup**
+```bash
+# Run migrations
+npx prisma migrate dev
+
+# Generate Prisma client
+npx prisma generate
+```
+
+## 📁 **Project Structure**
+
+See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed directory organization and Git strategy.
+
+### **Components:**
+- **Backend**: Node.js/Express API server
+- **Frontend**: React web application
+- **Desktop**: Electron desktop app
+- **Database**: PostgreSQL with Prisma ORM
 ```
 
 ### 2. Database Setup

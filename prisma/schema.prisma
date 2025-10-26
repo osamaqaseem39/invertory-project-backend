@@ -395,8 +395,11 @@ model Product {
   sku         String   @unique @db.VarChar(64)
   barcode     String?  @unique @db.VarChar(64)
   name        String   @db.Text
+  name_ar     String?  @db.Text
   description String?  @db.Text
+  description_ar String? @db.Text
   brand       String?  @db.Text
+  brand_ar    String?  @db.Text
   
   // Category (will be FK later)
   category_id String?  @db.Uuid
@@ -462,6 +465,8 @@ model Product {
   @@index([is_active])
   @@index([stock_quantity])
   @@index([reorder_level])
+  @@index([uom])
+  @@index([location])
   @@map("products")
 }
 
@@ -485,7 +490,9 @@ model ProductImage {
 model Category {
   id          String    @id @default(uuid()) @db.Uuid
   name        String    @db.VarChar(100)
+  name_ar     String?   @db.VarChar(100)
   description String?   @db.Text
+  description_ar String? @db.Text
   parent_id   String?   @db.Uuid
   parent      Category? @relation("CategoryHierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
   children    Category[] @relation("CategoryHierarchy")
@@ -507,10 +514,13 @@ model Category {
 model Supplier {
   id              String    @id @default(uuid()) @db.Uuid
   name            String    @db.VarChar(200)
+  name_ar         String?   @db.VarChar(200)
   contact_person  String?   @db.VarChar(100)
+  contact_person_ar String? @db.VarChar(100)
   email           String?   @db.VarChar(255)
   phone           String?   @db.VarChar(50)
   address         String?   @db.Text
+  address_ar      String?   @db.Text
   tax_id          String?   @db.VarChar(50)
   payment_terms   String?   @db.VarChar(50)
   
@@ -688,13 +698,17 @@ model Customer {
   
   // Basic Info
   first_name      String         @db.VarChar(100)
+  first_name_ar   String?        @db.VarChar(100)
   last_name       String         @db.VarChar(100)
+  last_name_ar    String?        @db.VarChar(100)
   email           String?        @db.VarChar(255)
   phone           String?        @db.VarChar(50)
   
   // Address
   address_line1   String?        @db.VarChar(255)
+  address_line1_ar String?       @db.VarChar(255)
   address_line2   String?        @db.VarChar(255)
+  address_line2_ar String?       @db.VarChar(255)
   city            String?        @db.VarChar(100)
   state           String?        @db.VarChar(100)
   postal_code     String?        @db.VarChar(20)
@@ -702,6 +716,7 @@ model Customer {
   
   // Business Info
   company_name    String?        @db.VarChar(200)
+  company_name_ar String?        @db.VarChar(200)
   tax_id          String?        @db.VarChar(50)
   
   // Customer Settings
@@ -1797,9 +1812,11 @@ model BrandingProfile {
   company_name          String              @db.VarChar(255)
   company_name_ar       String?             @db.VarChar(255)
   tagline               String?             @db.VarChar(255)
+  tagline_ar            String?             @db.VarChar(255)
   
   // Contact Information
   business_address      String?             @db.Text
+  business_address_ar   String?             @db.Text
   business_phone        String?             @db.VarChar(50)
   business_email        String?             @db.VarChar(255)
   business_website      String?             @db.VarChar(255)
@@ -1842,7 +1859,9 @@ model BrandingProfile {
   
   // Receipt Branding
   receipt_header_text   String?             @db.Text
+  receipt_header_text_ar String?           @db.Text
   receipt_footer_text   String?             @db.Text
+  receipt_footer_text_ar String?            @db.Text
   receipt_logo_position LogoPosition        @default(CENTER)
   receipt_logo_size     Int                 @default(200) // width in px
   show_logo_on_receipt  Boolean             @default(true)

@@ -5,10 +5,11 @@ import { useAuthStore } from '../store/authStore';
 import { useTranslation } from '../i18n/i18nContext';
 import { Product } from '../types';
 import { productsAPI } from '../api/products';
+import { getProductName, getProductBrand, formatCurrency } from '../utils/localization';
 
 export const ProductsPage = () => {
   const { user } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,7 +50,8 @@ export const ProductsPage = () => {
   };
 
   const handleArchive = async (product: Product) => {
-    if (!window.confirm(`Archive "${product.name}"?\n\nThis will hide it from the active catalog.`)) {
+    const productName = getProductName(product, language);
+    if (!window.confirm(`Archive "${productName}"?\n\nThis will hide it from the active catalog.`)) {
       return;
     }
 
@@ -65,7 +67,8 @@ export const ProductsPage = () => {
   };
 
   const handleRestore = async (product: Product) => {
-    if (!window.confirm(`Restore "${product.name}"?\n\nThis will make it available in the active catalog again.`)) {
+    const productName = getProductName(product, language);
+    if (!window.confirm(`Restore "${productName}"?\n\nThis will make it available in the active catalog again.`)) {
       return;
     }
 
@@ -85,7 +88,7 @@ export const ProductsPage = () => {
   const canArchiveProduct = ['owner_ultimate_super_admin', 'admin'].includes(user?.role || '');
 
   const formatPrice = (price: number): string => {
-    return `$${Number(price).toFixed(2)}`;
+    return formatCurrency(price, language);
   };
 
   // Reload products after operations
@@ -128,7 +131,7 @@ export const ProductsPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="input-field"
-                placeholder="Search by name, SKU, brand, or category..."
+                placeholder="Search by name, SKU, brand, description, barcode, location, unit, or category..."
               />
             </div>
 
@@ -224,7 +227,7 @@ export const ProductsPage = () => {
                     {product.images && product.images.length > 0 ? (
                       <img
                         src={product.images[0].url}
-                        alt={product.name}
+                        alt={getProductName(product, language)}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                     ) : (
@@ -253,7 +256,7 @@ export const ProductsPage = () => {
                   <div className="p-4">
                     <Link to={`/products/${product.id}`} className="block">
                       <div className="text-lg font-bold text-slate-800 mb-1 truncate hover:text-primary-600 transition-colors">
-                        {product.name}
+                        {getProductName(product, language)}
                       </div>
                     </Link>
                     <div className="text-sm text-slate-500 mb-2">SKU: {product.sku}</div>
@@ -262,7 +265,7 @@ export const ProductsPage = () => {
                     <div className="flex gap-2 mb-3 flex-wrap">
                       {product.brand && (
                         <span className="px-2 py-1 bg-accent-100 text-accent-700 text-xs font-semibold rounded-lg">
-                          {product.brand}
+                          {getProductBrand(product, language)}
                         </span>
                       )}
                       {product.category && (

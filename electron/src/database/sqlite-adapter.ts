@@ -1,16 +1,15 @@
 /**
  * SQLite Database Adapter
- * Implementation of DatabaseAdapter for SQLite
+ * Implementation of DatabaseAdapter for SQLite using better-sqlite3
  */
 
-import * as sqlite3 from 'sqlite3';
-import { promisify } from 'util';
+import Database from 'better-sqlite3';
 import { DatabaseAdapter, DatabaseConfig, DatabaseError, QueryResult } from './adapter';
 import * as path from 'path';
 import * as fs from 'fs';
 
 export class SQLiteAdapter implements DatabaseAdapter {
-  private db: sqlite3.Database | null = null;
+  private db: Database.Database | null = null;
   private config: DatabaseConfig;
   private isConnectedFlag: boolean = false;
   private lastInsertId: number = 0;
@@ -24,54 +23,38 @@ export class SQLiteAdapter implements DatabaseAdapter {
    * Connect to SQLite database
    */
   async connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        // Ensure database directory exists
-        if (this.config.path) {
-          const dbDir = path.dirname(this.config.path);
-          if (!fs.existsSync(dbDir)) {
-            fs.mkdirSync(dbDir, { recursive: true });
-          }
+    try {
+      // Ensure database directory exists
+      if (this.config.path) {
+        const dbDir = path.dirname(this.config.path);
+        if (!fs.existsSync(dbDir)) {
+          fs.mkdirSync(dbDir, { recursive: true });
         }
-
-        this.db = new sqlite3.Database(
-          this.config.path || './data/inventory.db',
-          (err) => {
-            if (err) {
-              reject(new DatabaseError(`Failed to connect to SQLite: ${err.message}`));
-              return;
-            }
-
-            // Enable foreign key constraints
-            this.db!.exec('PRAGMA foreign_keys = ON', (err) => {
-              if (err) {
-                reject(new DatabaseError(`Failed to enable foreign keys: ${err.message}`));
-                return;
-              }
-
-              this.isConnectedFlag = true;
-              console.log('✅ Connected to SQLite database');
-              resolve();
-            });
-          }
-        );
-
-        // Enable WAL mode for better concurrency
-        this.db.exec('PRAGMA journal_mode = WAL');
-        
-        // Set synchronous mode for better performance
-        this.db.exec('PRAGMA synchronous = NORMAL');
-        
-        // Set cache size
-        this.db.exec('PRAGMA cache_size = 10000');
-        
-        // Set temp store to memory
-        this.db.exec('PRAGMA temp_store = MEMORY');
-
-      } catch (error) {
-        reject(new DatabaseError(`Connection error: ${error}`));
       }
-    });
+
+      this.db = new Database(this.config.path || './data/inventory.db');
+
+      // Enable foreign key constraints
+      this.db.pragma('foreign_keys = ON');
+
+      // Enable WAL mode for better concurrency
+      this.db.pragma('journal_mode = WAL');
+      
+      // Set synchronous mode for better performance
+      this.db.pragma('synchronous = NORMAL');
+      
+      // Set cache size
+      this.db.pragma('cache_size = 10000');
+      
+      // Set temp store to memory
+      this.db.pragma('temp_store = MEMORY');
+
+      this.isConnectedFlag = true;
+      console.log('✅ Connected to SQLite database');
+
+    } catch (error) {
+      throw new DatabaseError(`Connection error: ${error}`);
+    }
   }
 
   /**
@@ -82,23 +65,30 @@ export class SQLiteAdapter implements DatabaseAdapter {
       throw new DatabaseError('Database not connected');
     }
 
-    return new Promise((resolve, reject) => {
-      this.db!.all(sql, params, (err, rows) => {
-        if (err) {
-          reject(new DatabaseError(`Query failed: ${err.message}`, (err as any).code, sql, params));
-          return;
-        }
-        resolve(rows as T[]);
-      });
-    });
+    try {
+      const stmt = this.db.prepare(sql);
+      const rows = stmt.all(...params) as T[];
+      return rows;
+    } catch (err: any) {
+      throw new DatabaseError(`Query failed: ${err.message}`, err.code, sql, params);
+    }
   }
 
   /**
    * Execute a single query and return the first result
    */
   async queryOne<T = any>(sql: string, params: any[] = []): Promise<T | null> {
-    const results = await this.query<T>(sql, params);
-    return results.length > 0 ? results[0] : null;
+    if (!this.db) {
+      throw new DatabaseError('Database not connected');
+    }
+
+    try {
+      const stmt = this.db.prepare(sql);
+      const row = stmt.get(...params) as T | undefined;
+      return row || null;
+    } catch (err: any) {
+      throw new DatabaseError(`Query failed: ${err.message}`, err.code, sql, params);
+    }
   }
 
   /**
@@ -109,19 +99,20 @@ export class SQLiteAdapter implements DatabaseAdapter {
       throw new DatabaseError('Database not connected');
     }
 
-    return new Promise((resolve, reject) => {
-      this.db!.run(sql, params, function(err) {
-        if (err) {
-          reject(new DatabaseError(`Execute failed: ${err.message}`, (err as any).code, sql, params));
-          return;
-        }
-        
-        resolve({
-          lastInsertId: this.lastID,
-          changes: this.changes
-        });
-      });
-    });
+    try {
+      const stmt = this.db.prepare(sql);
+      const result = stmt.run(...params);
+      
+      this.lastInsertId = result.lastInsertRowid as number;
+      this.affectedRows = result.changes;
+      
+      return {
+        lastInsertId: this.lastInsertId,
+        changes: this.affectedRows
+      };
+    } catch (err: any) {
+      throw new DatabaseError(`Execute failed: ${err.message}`, err.code, sql, params);
+    }
   }
 
   /**
@@ -132,33 +123,15 @@ export class SQLiteAdapter implements DatabaseAdapter {
       throw new DatabaseError('Database not connected');
     }
 
-    return new Promise((resolve, reject) => {
-      this.db!.serialize(() => {
-        this.db!.run('BEGIN TRANSACTION', (err) => {
-          if (err) {
-            reject(new DatabaseError(`Failed to begin transaction: ${err.message}`));
-            return;
-          }
-
-          callback()
-            .then((result) => {
-              this.db!.run('COMMIT', (err) => {
-                if (err) {
-                  this.db!.run('ROLLBACK');
-                  reject(new DatabaseError(`Failed to commit transaction: ${err.message}`));
-                  return;
-                }
-                resolve(result);
-              });
-            })
-            .catch((error) => {
-              this.db!.run('ROLLBACK', () => {
-                reject(error);
-              });
-            });
-        });
-      });
+    const transaction = this.db.transaction(() => {
+      return callback();
     });
+
+    try {
+      return await transaction();
+    } catch (error) {
+      throw new DatabaseError(`Transaction failed: ${error}`);
+    }
   }
 
   /**
@@ -241,24 +214,18 @@ export class SQLiteAdapter implements DatabaseAdapter {
    * Close the database connection
    */
   async close(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        resolve();
-        return;
-      }
+    if (!this.db) {
+      return;
+    }
 
-      this.db.close((err) => {
-        if (err) {
-          reject(new DatabaseError(`Failed to close database: ${err.message}`));
-          return;
-        }
-
-        this.isConnectedFlag = false;
-        this.db = null;
-        console.log('✅ Database connection closed');
-        resolve();
-      });
-    });
+    try {
+      this.db.close();
+      this.isConnectedFlag = false;
+      this.db = null;
+      console.log('✅ Database connection closed');
+    } catch (error) {
+      throw new DatabaseError(`Failed to close database: ${error}`);
+    }
   }
 
   /**
@@ -287,15 +254,11 @@ export class SQLiteAdapter implements DatabaseAdapter {
       throw new DatabaseError('Database not connected');
     }
 
-    return new Promise((resolve, reject) => {
-      this.db!.exec(sql, (err) => {
-        if (err) {
-          reject(new DatabaseError(`Raw SQL execution failed: ${err.message}`, (err as any).code, sql));
-          return;
-        }
-        resolve();
-      });
-    });
+    try {
+      this.db.exec(sql);
+    } catch (err: any) {
+      throw new DatabaseError(`Raw SQL execution failed: ${err.message}`, err.code, sql);
+    }
   }
 
   /**
@@ -341,7 +304,7 @@ export class SQLiteAdapter implements DatabaseAdapter {
       throw new DatabaseError('Database not connected');
     }
 
-    return new Promise((resolve, reject) => {
+    try {
       const sourcePath = this.config.path || './data/inventory.db';
       
       // Create backup directory if it doesn't exist
@@ -351,16 +314,11 @@ export class SQLiteAdapter implements DatabaseAdapter {
       }
 
       // Copy database file
-      fs.copyFile(sourcePath, backupPath, (err) => {
-        if (err) {
-          reject(new DatabaseError(`Backup failed: ${err.message}`));
-          return;
-        }
-        
-        console.log(`✅ Database backed up to: ${backupPath}`);
-        resolve();
-      });
-    });
+      fs.copyFileSync(sourcePath, backupPath);
+      console.log(`✅ Database backed up to: ${backupPath}`);
+    } catch (error) {
+      throw new DatabaseError(`Backup failed: ${error}`);
+    }
   }
 
   /**

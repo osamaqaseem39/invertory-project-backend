@@ -1,0 +1,47 @@
+# Database - Prisma Schema and Migrations
+# This contains the database schema and migration files
+
+# Generated Prisma Client
+node_modules/.prisma/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database files (if any local databases)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# Prisma specific
+# Keep migrations/ directory - it should be committed
+# migrations/
+
+# Generated files
+generated/

@@ -1,29 +1,104 @@
-# === Node Modules (all folders) ===
-**/node_modules/
+# Backend Server - Node.js/Express API
+# This is the main server that runs on port 4000
 
-# === Build and Distribution ===
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
 dist/
 build/
-.cache/
-temp/
-coverage/
-prisma/migrations/**/migration.sql.backup
 
-# === Electron Builds & Binaries ===
-electron/dist-electron/
-*.exe
-*.dll
-*.zip
-*.rar
-
-# === Environment & Local Config ===
+# Environment variables
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# === System & Editor Files ===
-.DS_Store
+# Runtime data
+*.pid
+server.pid
+uploads/
+logs/
 *.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# parcel-bundler cache (https://parceljs.org/)
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Electron portable distribution (large files)
+electron/portable-dist/

@@ -90,8 +90,11 @@ export interface Product {
   sku: string;
   barcode?: string;
   name: string;
+  name_ar?: string;
   description?: string;
+  description_ar?: string;
   brand?: string;
+  brand_ar?: string;
   category?: string;
   category_id?: string;
   price: number;
@@ -134,7 +137,9 @@ export interface ProductStatistics {
 export interface Category {
   id: string;
   name: string;
+  name_ar?: string;
   description: string | null;
+  description_ar?: string;
   parent_id: string | null;
   parent?: { id: string; name: string } | null;
   children?: Array<{ id: string; name: string }>;
@@ -151,10 +156,13 @@ export interface Category {
 export interface Supplier {
   id: string;
   name: string;
+  name_ar?: string;
   contact_person: string | null;
+  contact_person_ar?: string;
   email: string | null;
   phone: string | null;
   address: string | null;
+  address_ar?: string;
   tax_id: string | null;
   payment_terms: string | null;
   is_active: boolean;
@@ -311,16 +319,21 @@ export interface Customer {
   id: string;
   customer_number: string;
   first_name: string;
+  first_name_ar?: string;
   last_name: string;
+  last_name_ar?: string;
   email?: string;
   phone?: string;
   address_line1?: string;
+  address_line1_ar?: string;
   address_line2?: string;
+  address_line2_ar?: string;
   city?: string;
   state?: string;
   postal_code?: string;
   country?: string;
   company_name?: string;
+  company_name_ar?: string;
   tax_id?: string;
   credit_limit?: number;
   payment_terms?: string;

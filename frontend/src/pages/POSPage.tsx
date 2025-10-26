@@ -491,7 +491,7 @@ export const POSPage = () => {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Search by name, SKU, or barcode..."
+                  placeholder="Search by name, SKU, brand, description, barcode, location, unit, or category..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchProducts()}

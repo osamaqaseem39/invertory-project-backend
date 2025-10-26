@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
+import path from 'path';
 import config from './config';
 import logger from './utils/logger';
 import { connectDatabase, disconnectDatabase } from './database/client';
@@ -65,6 +66,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Rate limiting
 app.use(generalLimiter);
 
+// ===== STATIC FILES =====
+
+// Serve frontend static files
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
 // ===== ROUTES =====
 
 const API_PREFIX = `/api/${config.apiVersion}`;
@@ -104,8 +111,8 @@ app.use(`${API_PREFIX}/billing-analytics`, billingAnalyticsRoutes);
 // app.use(`${API_PREFIX}/master-analytics`, masterAnalyticsRoutes);
 app.use(`${API_PREFIX}/mvp-system`, mvpSystemRoutes);
 
-// Root info
-app.get('/', (_req, res) => {
+// Root info (API info)
+app.get('/api', (_req, res) => {
   res.json({
     name: 'User Management System API',
     version: config.apiVersion,
@@ -144,6 +151,11 @@ app.get('/', (_req, res) => {
 
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// Serve frontend for all non-API routes (SPA routing) - must be after error handlers
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
 
 // ===== BOOTSTRAP =====
 

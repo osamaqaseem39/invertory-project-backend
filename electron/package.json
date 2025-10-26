@@ -13,7 +13,13 @@
     "package:mac": "npm run build && electron-builder --mac",
     "package:linux": "npm run build && electron-builder --linux",
     "package:all": "npm run build && electron-builder -mwl",
-    "clean": "rm -rf dist dist-electron"
+    "clean": "rm -rf dist dist-electron",
+    "build:frontend": "cd ../frontend && npm run build",
+    "build:all": "npm run build:frontend && npm run build",
+    "build:executable": "npm run build:all && npm run package:win",
+    "build:executable:all": "npm run build:all && npm run package:all",
+    "dist": "npm run build:executable",
+    "dist:all": "npm run build:executable:all"
   },
   "build": {
     "appId": "com.inventory.app",
@@ -47,7 +53,8 @@
         }
       ],
       "icon": "build-resources/icon.ico",
-      "publisherName": "Inventory Management System"
+      "publisherName": "Inventory Management System",
+      "sign": false
     },
     "nsis": {
       "oneClick": false,
@@ -101,15 +108,18 @@
       "category": "Office"
     },
     "compression": "maximum",
-    "asar": true
+    "asar": true,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "npmRebuild": false
   },
   "dependencies": {
-    "@types/sqlite3": "^3.1.11",
     "dotenv": "^17.2.3",
     "electron-store": "^8.2.0",
-    "sqlite3": "^5.1.7"
+    "better-sqlite3": "^9.2.2"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^22.3.0",
     "electron": "^31.3.1",
     "electron-builder": "^24.13.3",
